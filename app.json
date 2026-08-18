@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Wine & Liquor Joint",
+    "slug": "wine-and-liquor-joint",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#080706",
+    "splash": {
+      "backgroundColor": "#080706",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "rw.wineandliquorjoint.app"
+    },
+    "android": {
+      "package": "rw.wineandliquorjoint.app"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
