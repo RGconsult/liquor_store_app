@@ -11,7 +11,7 @@ interface CartScreenProps {
 }
 
 export const CartScreen: React.FC<CartScreenProps> = ({ onNavigateCheckout, onNavigateCatalog }) => {
-  const { cart, removeFromCart, updateQuantity, itemCount, subtotalRwf } = useCart();
+  const { cart, removeFromCart, updateQuantity, itemCount, subtotalUsd } = useCart();
 
   if (cart.length === 0) {
     return (
@@ -55,7 +55,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ onNavigateCheckout, onNa
               <Text style={styles.itemSub} numberOfLines={1}>{item.product.subtitle}</Text>
 
               <View style={styles.priceRow}>
-                <Text style={styles.itemPriceRwf}>{formatRwf(item.product.priceRwf * item.quantity)}</Text>
+                <Text style={styles.itemPriceRwf}>{formatRwf(item.product.priceUsd * item.quantity)}</Text>
               </View>
             </View>
 
@@ -83,12 +83,12 @@ export const CartScreen: React.FC<CartScreenProps> = ({ onNavigateCheckout, onNa
         <Text style={styles.summaryTitle}>ORDER SUMMARY</Text>
 
         <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>TOTAL</Text>
-          <Text style={styles.totalRwf}>{formatRwf(subtotalRwf)}</Text>
+          <Text style={styles.totalLabel}>SUBTOTAL</Text>
+          <Text style={styles.totalRwf}>{formatRwf(subtotalUsd)}</Text>
         </View>
 
         <Text style={styles.deliveryNote}>
-          Delivery adds a flat 2,500 RWF fee, applied at checkout if you choose delivery over pickup.
+          Delivery fee, tax, and any loyalty rewards are calculated at checkout.
         </Text>
       </View>
 

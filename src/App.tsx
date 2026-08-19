@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, SafeAreaView, StatusBar, Platform, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, StatusBar, Platform, ActivityIndicator } from 'react-native';
+import { RefreshCw } from 'lucide-react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { hydrateStorage } from './services/storage';
 
@@ -32,11 +33,26 @@ export const MainApp: React.FC = () => {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [catalogInitialSearch, setCatalogInitialSearch] = useState<string | undefined>(undefined);
   const [catalogInitialCategory, setCatalogInitialCategory] = useState<LiquorCategory | undefined>(undefined);
+  const [loadError, setLoadError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadStorefront = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError('');
+    try {
+      const [productList, categoryList] = await Promise.all([fetchProducts(), fetchCategories()]);
+      setProducts(productList);
+      setCategories(categoryList);
+    } catch (e: any) {
+      setLoadError(e?.message || 'Could not reach the store. Check your connection and try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchProducts().then(setProducts);
-    fetchCategories().then(setCategories);
-  }, []);
+    loadStorefront();
+  }, [loadStorefront]);
 
   // Plain tab navigation (bottom nav, header menu, "view all") clears any pending
   // search/category redirect so a fresh visit to Catalog isn't filtered by accident.
@@ -70,7 +86,24 @@ export const MainApp: React.FC = () => {
 
         {/* Screen View */}
         <View style={styles.content}>
-          {activeTab === 'home' && (
+          {isLoading && products.length === 0 && (
+            <View style={styles.centerState}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          )}
+
+          {!isLoading && loadError && products.length === 0 && (
+            <View style={styles.centerState}>
+              <Text style={styles.errorTitle}>Couldn't load the store</Text>
+              <Text style={styles.errorMessage}>{loadError}</Text>
+              <TouchableOpacity onPress={loadStorefront} style={styles.retryBtn} activeOpacity={0.85}>
+                <RefreshCw size={16} color="#ffffff" style={{ marginRight: 8 }} />
+                <Text style={styles.retryBtnText}>Try Again</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {(!isLoading && (products.length > 0 || !loadError)) && activeTab === 'home' && (
             <HomeScreen
               products={products}
               categories={categories}
@@ -148,6 +181,40 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  centerState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+  },
+  errorTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: 14,
+  },
+  retryBtnText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
 });
 

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { fetchOrders } from '../services/api';
 import { Order, Product } from '../types';
-import { User, Heart, LogOut, Clock, Package } from 'lucide-react-native';
+import { User, Heart, LogOut, Clock, Package, Tag, Truck } from 'lucide-react-native';
 import { useWishlist } from '../context/WishlistContext';
 import { colors } from '../theme';
 import { formatRwf } from '../utils/currency';
@@ -13,8 +13,15 @@ interface AccountScreenProps {
   onQuickView: (p: Product) => void;
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  ORDER_PLACED: 'Order Placed',
+  PREPARING: 'Preparing for Dispatch',
+  OUT_FOR_DELIVERY: 'Out for Delivery',
+  DELIVERED: 'Delivered'
+};
+
 export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickView }) => {
-  const { user, login, signup, logout } = useAuth();
+  const { user, coupons, login, signup, logout } = useAuth();
   const { wishlistIds } = useWishlist();
 
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -22,33 +29,35 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authSubmitting, setAuthSubmitting] = useState(false);
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [ordersError, setOrdersError] = useState('');
 
   useEffect(() => {
-    if (user) {
-      setLoadingOrders(true);
-      fetchOrders().then((list) => {
-        setOrders(list);
-        setLoadingOrders(false);
-      });
-    }
+    if (!user) return;
+    setLoadingOrders(true);
+    setOrdersError('');
+    fetchOrders()
+      .then(setOrders)
+      .catch((e) => setOrdersError(e?.message || 'Could not load your order history.'))
+      .finally(() => setLoadingOrders(false));
   }, [user]);
 
   const handleAuth = async () => {
     setAuthError('');
-
-    if (isLoginMode) {
-      const ok = await login(email, password);
-      if (!ok) setAuthError('Invalid credentials. Check your email and password.');
-    } else {
-      const ok = await signup(name, email, password);
-      if (!ok) setAuthError('Could not create account. Email may already be in use.');
-    }
+    setAuthSubmitting(true);
+    const result = isLoginMode ? await login(email, password) : await signup(name, email, password);
+    setAuthSubmitting(false);
+    if (!result.ok) setAuthError(result.error || 'Something went wrong.');
   };
 
   const wishlistedProducts = products.filter((p) => wishlistIds.includes(p.id));
+  const orderCount = orders.length;
+  const ordersUntilCoupon = orderCount === 0 ? 2 : 2 - (orderCount % 2 === 0 ? 0 : orderCount % 2);
+  const ordersUntilFreeDelivery = orderCount === 0 ? 5 : 5 - (orderCount % 5 === 0 ? 0 : orderCount % 5);
+  const freeDeliveryCredits = user?.freeDeliveryCredits ?? 0;
 
   if (!user) {
     return (
@@ -106,10 +115,12 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
 
           {Boolean(authError) && <Text style={styles.errorText}>{authError}</Text>}
 
-          <TouchableOpacity onPress={handleAuth} style={styles.submitBtn} activeOpacity={0.85}>
-            <Text style={styles.submitBtnText}>
-              {isLoginMode ? 'Sign In' : 'Create Account'}
-            </Text>
+          <TouchableOpacity onPress={handleAuth} style={styles.submitBtn} activeOpacity={0.85} disabled={authSubmitting}>
+            {authSubmitting ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text style={styles.submitBtnText}>{isLoginMode ? 'Sign In' : 'Create Account'}</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setIsLoginMode(!isLoginMode)} style={{ marginTop: 16, alignItems: 'center' }}>
@@ -143,13 +154,58 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
         </View>
       </View>
 
+      {/* Loyalty Perks */}
+      <View style={styles.perksRow}>
+        <View style={styles.perkCard}>
+          <View style={styles.perkHeaderRow}>
+            <Tag size={14} color={colors.primary} />
+            <Text style={styles.perkLabel}>Coupons</Text>
+          </View>
+          {coupons.length === 0 ? (
+            <Text style={styles.perkEmptyText}>
+              {ordersUntilCoupon} more order{ordersUntilCoupon === 1 ? '' : 's'} until your next coupon.
+            </Text>
+          ) : (
+            <View style={{ gap: 4 }}>
+              {coupons.map((c) => (
+                <View key={c.id} style={styles.couponLine}>
+                  <Text style={styles.couponCode}>{c.code}</Text>
+                  <Text style={styles.couponPercent}>{c.percentOff}% off</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.perkCard}>
+          <View style={styles.perkHeaderRow}>
+            <Truck size={14} color={colors.primary} />
+            <Text style={styles.perkLabel}>Free Delivery</Text>
+          </View>
+          <Text style={styles.perkBigNumber}>{freeDeliveryCredits}</Text>
+          <Text style={styles.perkEmptyText}>
+            {freeDeliveryCredits > 0
+              ? 'Applied automatically at checkout.'
+              : `${ordersUntilFreeDelivery} more order${ordersUntilFreeDelivery === 1 ? '' : 's'} until your next credit.`}
+          </Text>
+        </View>
+      </View>
+
       {/* Orders Section */}
       <View style={styles.sectionTitleRow}>
         <Package size={18} color={colors.primary} style={{ marginRight: 8 }} />
         <Text style={styles.sectionTitle}>ORDER HISTORY</Text>
       </View>
 
-      {orders.length === 0 ? (
+      {loadingOrders ? (
+        <View style={styles.emptyBox}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      ) : ordersError ? (
+        <View style={styles.emptyBox}>
+          <Text style={styles.emptyText}>{ordersError}</Text>
+        </View>
+      ) : orders.length === 0 ? (
         <View style={styles.emptyBox}>
           <Clock size={28} color={colors.textMuted} style={{ marginBottom: 6 }} />
           <Text style={styles.emptyText}>No past orders recorded yet.</Text>
@@ -160,24 +216,24 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
             <View key={ord.id} style={styles.orderCard}>
               <View style={styles.orderCardHeader}>
                 <View>
-                  <Text style={styles.orderId}>#{ord.id}</Text>
+                  <Text style={styles.orderId}>#{ord.id.slice(0, 8)}</Text>
                   <Text style={styles.orderDate}>{new Date(ord.createdAt).toLocaleDateString()}</Text>
                 </View>
                 <View style={styles.statusBadge}>
-                  <Text style={styles.statusText}>{ord.status}</Text>
+                  <Text style={styles.statusText}>{STATUS_LABEL[ord.status] || ord.status}</Text>
                 </View>
               </View>
 
               {ord.items.map((it, idx) => (
                 <View key={idx} style={styles.orderItemRow}>
                   <Text style={styles.orderItemName}>{it.quantity}x {it.product?.name || it.nameSnapshot}</Text>
-                  <Text style={styles.orderItemPrice}>{formatRwf((it.priceRwfSnapshot ?? 0) * it.quantity)}</Text>
+                  <Text style={styles.orderItemPrice}>{formatRwf((it.priceUsdSnapshot ?? 0) * it.quantity)}</Text>
                 </View>
               ))}
 
               <View style={styles.orderFooter}>
                 <Text style={styles.orderTotalLabel}>Total Paid:</Text>
-                <Text style={styles.orderTotalVal}>{formatRwf(ord.totalRwf)}</Text>
+                <Text style={styles.orderTotalVal}>{formatRwf(ord.totalUsd)}</Text>
               </View>
             </View>
           ))}
@@ -201,7 +257,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
               <Image source={{ uri: p.image }} style={styles.wishlistImg} resizeMode="contain" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.wishlistTitle} numberOfLines={1}>{p.name}</Text>
-                <Text style={styles.wishlistPrice}>{formatRwf(p.priceRwf)}</Text>
+                <Text style={styles.wishlistPrice}>{formatRwf(p.priceUsd)}</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -357,6 +413,56 @@ const styles = StyleSheet.create({
   logoutBtn: {
     padding: 8,
   },
+  perksRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 8,
+  },
+  perkCard: {
+    flex: 1,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    padding: 14,
+  },
+  perkHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  perkLabel: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  perkBigNumber: {
+    color: colors.primary,
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  perkEmptyText: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  couponLine: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  couponCode: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  couponPercent: {
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -368,11 +474,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.8,
-  },
-  infoText: {
-    color: colors.textMuted,
-    fontSize: 13,
-    paddingVertical: 8,
   },
   emptyBox: {
     backgroundColor: colors.card,

@@ -23,34 +23,41 @@ export const NotificationsScreen: React.FC = () => {
         )}
       </View>
 
-      <View style={styles.list}>
-        {notifications.map((item) => (
-          <View
-            key={item.id}
-            style={[styles.card, item.read ? styles.cardRead : styles.cardUnread]}
-          >
-            <View style={styles.row}>
-              <View style={styles.iconBox}>
-                {item.type === 'PROMO' ? (
-                  <Sparkles size={18} color={colors.gold} />
-                ) : (
-                  <Package size={18} color={colors.gold} />
-                )}
-              </View>
-
-              <View style={styles.info}>
-                <View style={styles.cardHeaderRow}>
-                  <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={styles.timeText}>
-                    {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
+      {notifications.length === 0 ? (
+        <View style={styles.emptyBox}>
+          <Package size={28} color={colors.textMuted} style={{ marginBottom: 8 }} />
+          <Text style={styles.emptyText}>No notifications yet.</Text>
+        </View>
+      ) : (
+        <View style={styles.list}>
+          {notifications.map((item) => (
+            <View
+              key={item.id}
+              style={[styles.card, item.read ? styles.cardRead : styles.cardUnread]}
+            >
+              <View style={styles.row}>
+                <View style={styles.iconBox}>
+                  {item.type === 'COUPON_EARNED' ? (
+                    <Sparkles size={18} color={colors.gold} />
+                  ) : (
+                    <Package size={18} color={colors.gold} />
+                  )}
                 </View>
-                <Text style={styles.messageText}>{item.message}</Text>
+
+                <View style={styles.info}>
+                  <View style={styles.cardHeaderRow}>
+                    <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={styles.timeText}>
+                      {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                  <Text style={styles.messageText}>{item.message}</Text>
+                </View>
               </View>
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -97,6 +104,19 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 10,
+  },
+  emptyBox: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    padding: 28,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  emptyText: {
+    color: colors.textSecondary,
+    fontSize: 14,
   },
   card: {
     backgroundColor: colors.card,

@@ -1,106 +1,91 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { User, Coupon } from '../types';
 import { getItem, setItem, removeItem } from '../services/storage';
+import { loginRequest, signupRequest, logoutRequest, fetchMe } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
+  coupons: Coupon[];
   token: string | null;
-  login: (email: string, pass: string) => Promise<boolean>;
-  signup: (name: string, email: string, pass: string) => Promise<boolean>;
-  logout: () => void;
   isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signup: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  logout: () => void;
+  refreshMe: () => Promise<void>;
+  setSession: (user: User, token: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [token, setToken] = useState<string | null>(() => getItem('rv_jwt_token'));
   const [isLoading, setIsLoading] = useState(true);
 
+  const refreshMe = useCallback(async () => {
+    try {
+      const { user: freshUser, coupons: freshCoupons } = await fetchMe();
+      setUser(freshUser);
+      setCoupons(freshCoupons);
+    } catch (e) {
+      // Token expired/invalid — drop the session.
+      await removeItem('rv_jwt_token');
+      setToken(null);
+      setUser(null);
+      setCoupons([]);
+    }
+  }, []);
+
   useEffect(() => {
-    async function verifyAuth() {
+    (async () => {
       if (!token) {
         setIsLoading(false);
         return;
       }
-
-      try {
-        const res = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-        } else {
-          // Token expired or invalid
-          await removeItem('rv_jwt_token');
-          setToken(null);
-        }
-      } catch (e) {
-        console.warn('Auth verification offline fallback:', e);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    verifyAuth();
+      await refreshMe();
+      setIsLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const login = async (email: string, pass: string): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pass })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.token) {
-          await setItem('rv_jwt_token', data.token);
-          setToken(data.token);
-          setUser(data.user);
-          return true;
-        }
-      }
-    } catch (e) {
-      console.warn('Login request error:', e);
-    }
-    return false;
+  const setSession = async (nextUser: User, nextToken: string) => {
+    await setItem('rv_jwt_token', nextToken);
+    setToken(nextToken);
+    setUser(nextUser);
+    await refreshMe();
   };
 
-  const signup = async (name: string, email: string, pass: string): Promise<boolean> => {
+  const login = async (email: string, password: string) => {
     try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password: pass })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.token) {
-          await setItem('rv_jwt_token', data.token);
-          setToken(data.token);
-          setUser(data.user);
-          return true;
-        }
-      }
-    } catch (e) {
-      console.warn('Signup request error:', e);
+      const { user: loggedInUser, token: sessionToken } = await loginRequest(email, password);
+      await setSession(loggedInUser, sessionToken);
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Invalid email or password.' };
     }
-    return false;
+  };
+
+  const signup = async (name: string, email: string, password: string) => {
+    try {
+      const { user: newUser, token: sessionToken } = await signupRequest(name, email, password);
+      await setSession(newUser, sessionToken);
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Could not create account.' };
+    }
   };
 
   const logout = async () => {
+    logoutRequest().catch(() => {});
     await removeItem('rv_jwt_token');
     setToken(null);
     setUser(null);
+    setCoupons([]);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, signup, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, coupons, token, isLoading, login, signup, logout, refreshMe, setSession }}>
       {children}
     </AuthContext.Provider>
   );

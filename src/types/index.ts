@@ -6,7 +6,7 @@ export interface Product {
   subtitle: string;
   category: string;
   subCategory: string;
-  priceRwf: number;
+  priceUsd: number;
   region: string;
   abv: string;
   volume: string;
@@ -32,6 +32,13 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface Coupon {
+  id: string;
+  code: string;
+  percentOff: number;
+  createdAt?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -46,30 +53,41 @@ export interface OrderItem {
   id: string;
   productId: string;
   nameSnapshot: string;
-  priceRwfSnapshot: number;
+  priceUsdSnapshot: number;
   quantity: number;
   product?: Product;
+}
+
+export interface DeliveryDetails {
+  fulfillmentType: 'delivery' | 'pickup';
+  fullName: string;
+  email: string;
+  address: string;
+  city: string;
+  province: string;
+  postalCode?: string;
+  deliveryOption: 'now' | 'schedule';
+  scheduledDate?: string;
+  scheduledTimeSlot?: string;
+  paymentPlan: 'FULL' | 'PICKUP_PAY';
+  momoNumber?: string;
+  cardLast4?: string;
+  upfrontPaidUsd: number;
+  dueOnDeliveryUsd: number;
 }
 
 export interface Order {
   id: string;
   userId: string;
   status: 'ORDER_PLACED' | 'PREPARING' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
-  subtotalRwf: number;
-  shippingRwf: number;
-  totalRwf: number;
-  paymentMethod: 'card' | 'mobile' | 'pickup_cash';
-  deliveryDetails: {
-    fullName: string;
-    email: string;
-    address: string;
-    city: string;
-    province: string;
-    momoNumber?: string;
-    paymentPlan?: string;
-    upfrontPaidRwf?: number;
-    dueOnDeliveryRwf?: number;
-  };
+  subtotalUsd: number;
+  shippingUsd: number;
+  taxesUsd: number;
+  totalUsd: number;
+  paymentMethod: 'card' | 'mobile';
+  deliveryDetails: DeliveryDetails;
+  freeDeliveryApplied: boolean;
+  couponId?: string | null;
   items: OrderItem[];
   createdAt: string;
 }

@@ -5,6 +5,7 @@ import { CategoryFilter } from '../components/CategoryFilter';
 import { ProductCard } from '../components/ProductCard';
 import { Search, Sparkles } from 'lucide-react-native';
 import { colors } from '../theme';
+import { usdToRwf } from '../utils/currency';
 
 interface CatalogScreenProps {
   products: Product[];
@@ -36,18 +37,19 @@ export const CatalogScreen: React.FC<CatalogScreenProps> = ({
       p.subtitle.toLowerCase().includes(search.toLowerCase()) ||
       p.category.toLowerCase().includes(search.toLowerCase());
 
+    const priceRwf = usdToRwf(p.priceUsd);
     let matchesPrice = true;
-    if (priceTier === 'under50') matchesPrice = p.priceRwf < 50000;
-    else if (priceTier === '50to100') matchesPrice = p.priceRwf >= 50000 && p.priceRwf <= 100000;
-    else if (priceTier === 'above100') matchesPrice = p.priceRwf > 100000;
+    if (priceTier === 'under50') matchesPrice = priceRwf < 50000;
+    else if (priceTier === '50to100') matchesPrice = priceRwf >= 50000 && priceRwf <= 100000;
+    else if (priceTier === 'above100') matchesPrice = priceRwf > 100000;
 
     return matchesCat && matchesSearch && matchesPrice;
   });
 
   if (sortOrder === 'price-asc') {
-    filtered.sort((a, b) => a.priceRwf - b.priceRwf);
+    filtered.sort((a, b) => a.priceUsd - b.priceUsd);
   } else if (sortOrder === 'price-desc') {
-    filtered.sort((a, b) => b.priceRwf - a.priceRwf);
+    filtered.sort((a, b) => b.priceUsd - a.priceUsd);
   } else if (sortOrder === 'name') {
     filtered.sort((a, b) => a.name.localeCompare(b.name));
   }

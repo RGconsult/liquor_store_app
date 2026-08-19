@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
 import { Product } from '../types';
 import { Heart, Plus } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
@@ -17,6 +17,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }
   const { toggleWishlist, isWishlisted } = useWishlist();
   const wishlisted = isWishlisted(product.id);
 
+  const handleToggleWishlist = async () => {
+    const result = await toggleWishlist(product.id);
+    if (!result.ok && result.error) {
+      Alert.alert('Sign in required', result.error);
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -41,7 +47,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }
 
         {/* Wishlist Icon */}
         <TouchableOpacity
-          onPress={() => toggleWishlist(product.id)}
+          onPress={handleToggleWishlist}
           style={[styles.wishlistBtn, wishlisted && styles.wishlistActiveBtn]}
           activeOpacity={0.8}
         >
@@ -59,7 +65,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }
 
         {/* Price & Add to Bag Footer */}
         <View style={styles.footer}>
-          <Text style={styles.priceRwf}>{formatRwf(product.priceRwf)}</Text>
+          <Text style={styles.priceRwf}>{formatRwf(product.priceUsd)}</Text>
 
           <TouchableOpacity
             onPress={() => addToCart(product)}

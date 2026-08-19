@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, Image, ScrollView, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Product } from '../types';
 import { X, Heart, ShoppingBag, MapPin, Check } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
@@ -31,6 +31,13 @@ export const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({ pr
     }, 1200);
   };
 
+  const handleToggleWishlist = async () => {
+    const result = await toggleWishlist(product.id);
+    if (!result.ok && result.error) {
+      Alert.alert('Sign in required', result.error);
+    }
+  };
+
   return (
     <Modal visible={Boolean(product)} transparent animationType="slide">
       <View style={styles.overlay}>
@@ -50,7 +57,7 @@ export const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({ pr
               )}
 
               <TouchableOpacity
-                onPress={() => toggleWishlist(product.id)}
+                onPress={handleToggleWishlist}
                 style={[styles.wishlistBtn, wishlisted && styles.wishlistBtnActive]}
               >
                 <Heart size={18} color={wishlisted ? '#fff' : colors.text} fill={wishlisted ? '#fff' : 'transparent'} />
@@ -81,7 +88,7 @@ export const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({ pr
 
             <View style={styles.priceQtyRow}>
               <View>
-                <Text style={styles.priceRwf}>{formatRwf(product.priceRwf * quantity)}</Text>
+                <Text style={styles.priceRwf}>{formatRwf(product.priceUsd * quantity)}</Text>
               </View>
 
               <View style={styles.qtyBox}>

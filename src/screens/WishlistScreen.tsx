@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Product } from '../types';
 import { ProductCard } from '../components/ProductCard';
 import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
 import { Heart } from 'lucide-react-native';
 import { colors } from '../theme';
 
@@ -12,6 +13,7 @@ interface WishlistScreenProps {
 }
 
 export const WishlistScreen: React.FC<WishlistScreenProps> = ({ products, onQuickView }) => {
+  const { user } = useAuth();
   const { wishlistIds } = useWishlist();
   const wishlisted = products.filter((p) => wishlistIds.includes(p.id));
 
@@ -24,7 +26,15 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({ products, onQuic
         </Text>
       </View>
 
-      {wishlisted.length === 0 ? (
+      {!user ? (
+        <View style={styles.emptyCard}>
+          <View style={styles.emptyIconBox}>
+            <Heart size={32} color={colors.primary} />
+          </View>
+          <Text style={styles.emptyTitle}>Sign in to see your wishlist</Text>
+          <Text style={styles.emptySubtitle}>Your saved drinks are tied to your account — log in from the Account tab.</Text>
+        </View>
+      ) : wishlisted.length === 0 ? (
         <View style={styles.emptyCard}>
           <View style={styles.emptyIconBox}>
             <Heart size={32} color={colors.primary} />

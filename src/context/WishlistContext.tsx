@@ -1,53 +1,62 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getItem, setItem } from '../services/storage';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useAuth } from './AuthContext';
+import { fetchWishlistIds, toggleWishlistRequest } from '../services/api';
 
 interface WishlistContextType {
   wishlistIds: string[];
-  toggleWishlist: (productId: string) => void;
+  isLoading: boolean;
+  toggleWishlist: (productId: string) => Promise<{ ok: boolean; error?: string }>;
   isWishlisted: (productId: string) => boolean;
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [wishlistIds, setWishlistIds] = useState<string[]>(() => {
-    const saved = getItem('rv_wishlist');
-    return saved ? JSON.parse(saved) : ['prod-1', 'prod-2'];
-  });
+  const { user } = useAuth();
+  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!user) {
+      setWishlistIds([]);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const ids = await fetchWishlistIds();
+      setWishlistIds(ids);
+    } catch (e) {
+      // Leave the last known list in place on a transient network error.
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    setItem('rv_wishlist', JSON.stringify(wishlistIds));
-  }, [wishlistIds]);
+    refresh();
+  }, [refresh]);
 
   const toggleWishlist = async (productId: string) => {
-    setWishlistIds((prev) => {
-      const exists = prev.includes(productId);
-      const next = exists ? prev.filter((id) => id !== productId) : [...prev, productId];
-      return next;
-    });
+    if (!user) {
+      return { ok: false, error: 'Please log in to save drinks to your profile.' };
+    }
+    const previous = wishlistIds;
+    const wasWishlisted = previous.includes(productId);
+    setWishlistIds(wasWishlisted ? previous.filter((id) => id !== productId) : [...previous, productId]);
 
-    // Optionally sync with backend API if logged in
-    const token = getItem('rv_jwt_token');
-    if (token) {
-      try {
-        await fetch('/api/wishlist', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ productId })
-        });
-      } catch (e) {
-        console.warn('Sync wishlist error:', e);
-      }
+    try {
+      await toggleWishlistRequest(productId);
+      return { ok: true };
+    } catch (e: any) {
+      setWishlistIds(previous);
+      return { ok: false, error: e?.message || 'Failed to update wishlist.' };
     }
   };
 
   const isWishlisted = (productId: string) => wishlistIds.includes(productId);
 
   return (
-    <WishlistContext.Provider value={{ wishlistIds, toggleWishlist, isWishlisted }}>
+    <WishlistContext.Provider value={{ wishlistIds, isLoading, toggleWishlist, isWishlisted }}>
       {children}
     </WishlistContext.Provider>
   );
