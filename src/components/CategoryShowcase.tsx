@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
 import { LiquorCategory } from '../types';
 import { BOTTLE_IMAGES } from '../constants/bottleImages';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useThemedStyles } from '../context/ThemeContext';
 
 interface CategoryShowcaseProps {
   onSelectCategory: (category: LiquorCategory) => void;
@@ -22,6 +23,7 @@ const SHOWCASE_ITEMS: { id: LiquorCategory; label: string; image: string }[] = [
 const SLIDE_SPEED_PX_PER_SEC = 34;
 
 export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ onSelectCategory }) => {
+  const styles = useThemedStyles(createStyles);
   const translateX = useRef(new Animated.Value(0)).current;
   const [setWidth, setSetWidth] = useState(0);
 
@@ -83,7 +85,7 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ onSelectCate
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     marginVertical: 14,
   },

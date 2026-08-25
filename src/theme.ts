@@ -3,9 +3,12 @@
  * Exact brand color system from web storefront (C:\Users\hp\Desktop\rg_other):
  *   Primary:   Teal Green #1b5e53 ("Wine")
  *   Secondary: Warm Amber #d84315 ("& Liquor Joint")
+ *
+ * Light and dark palettes share the same keys so every screen's styles work
+ * unchanged regardless of which one is active — see ThemeContext.
  */
 
-export const colors = {
+export const lightColors = {
   // Primary Teal Green (from web brand)
   primary: '#1b5e53',        // Official website primary teal green (#1b5e53)
   primaryDark: '#14463e',    // Darker teal for active buttons/borders
@@ -53,4 +56,55 @@ export const colors = {
   // Dividers & Overlay
   divider: '#e2e8f0',        // Light divider line
   overlay: 'rgba(15, 23, 42, 0.65)', // Modal backdrop overlay
+};
+
+export type ColorPalette = typeof lightColors;
+
+export const darkColors: ColorPalette = {
+  // Brand teal, brightened slightly for contrast against dark surfaces
+  primary: '#2ba894',
+  primaryDark: '#1b5e53',
+  primaryLight: '#4fc9b3',
+  primaryContainer: '#123a33',
+
+  // Brand amber, brightened slightly for contrast against dark surfaces
+  amber: '#ff7043',
+  amberDark: '#d84315',
+  amberLight: '#3a241c',
+  amberContainer: '#3a241c',
+
+  gold: '#ff7043',
+  goldDark: '#d84315',
+  goldLight: '#3a241c',
+  accent: '#ff7043',
+
+  // Dark Mode Backgrounds & Surface Containers
+  bg: '#0b1210',
+  bgElevated: '#111a17',
+  card: '#141f1c',
+  cardBorder: '#22322d',
+  cardElevated: '#1a2622',
+
+  // High-Contrast Typography for Dark Screens
+  text: '#f1f5f4',
+  textSecondary: '#b7c4c0',
+  textMuted: '#8a9793',
+  textOnPrimary: '#ffffff',
+  textOnAmber: '#ffffff',
+
+  // Input & Status
+  inputBg: '#141f1c',
+  inputBorder: '#2c3d37',
+  success: '#2ba894',
+  danger: '#ef5350',
+  warning: '#ff7043',
+
+  // Badges & Overlay
+  badgeBg: '#123a33',
+  badgeBorder: '#2ba894',
+  amberBadgeBg: '#3a241c',
+
+  // Dividers & Overlay
+  divider: '#22322d',
+  overlay: 'rgba(0, 0, 0, 0.75)',
 };

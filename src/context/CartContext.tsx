@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { CartItem, Product } from '../types';
-import { getItem, setItem } from '../services/storage';
+import { getItemAsync, setItem } from '../services/storage';
 
 interface CartContextType {
   cart: CartItem[];
@@ -10,19 +10,46 @@ interface CartContextType {
   clearCart: () => void;
   itemCount: number;
   subtotalUsd: number;
+  registerOnAdd: (cb: (() => void) | null) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = getItem('rv_cart');
-    return saved ? JSON.parse(saved) : [];
-  });
+// Each account gets its own cart on this device — otherwise whatever was
+// sitting in a shared cart carries over to the next person who signs in.
+function cartStorageKey(userId: string): string {
+  return `rv_cart_${userId}`;
+}
+
+export const CartProvider: React.FC<{ userId: string; children: React.ReactNode }> = ({ userId, children }) => {
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Lets screens (e.g. the tab navigator in App.tsx) react to a successful
+  // add-to-cart without every product card needing a navigation prop threaded
+  // down to it.
+  const onAddRef = useRef<(() => void) | null>(null);
+  const registerOnAdd = (cb: (() => void) | null) => {
+    onAddRef.current = cb;
+  };
 
   useEffect(() => {
-    setItem('rv_cart', JSON.stringify(cart));
-  }, [cart]);
+    let cancelled = false;
+    setIsHydrated(false);
+    getItemAsync(cartStorageKey(userId)).then((saved) => {
+      if (cancelled) return;
+      setCart(saved ? JSON.parse(saved) : []);
+      setIsHydrated(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!isHydrated) return; // don't overwrite storage with [] before the real cart loads
+    setItem(cartStorageKey(userId), JSON.stringify(cart));
+  }, [cart, isHydrated, userId]);
 
   const addToCart = (product: Product, quantity = 1) => {
     setCart((prev) => {
@@ -34,6 +61,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return [...prev, { product, quantity }];
     });
+    onAddRef.current?.();
   };
 
   const removeFromCart = (productId: string) => {
@@ -70,7 +98,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateQuantity,
         clearCart,
         itemCount,
-        subtotalUsd
+        subtotalUsd,
+        registerOnAdd
       }}
     >
       {children}

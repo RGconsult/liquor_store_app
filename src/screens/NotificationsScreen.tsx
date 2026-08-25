@@ -2,10 +2,13 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useNotifications } from '../context/NotificationContext';
 import { CheckCheck, Sparkles, Package } from 'lucide-react-native';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 export const NotificationsScreen: React.FC = () => {
   const { notifications, markAllAsRead, unreadCount } = useNotifications();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
@@ -62,7 +65,7 @@ export const NotificationsScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,

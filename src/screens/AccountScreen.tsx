@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { fetchOrders } from '../services/api';
 import { Order, Product } from '../types';
-import { User, Heart, LogOut, Clock, Package, Tag, Truck } from 'lucide-react-native';
+import { Heart, LogOut, Clock, Package, Tag, Truck, Sun, Moon, Smartphone } from 'lucide-react-native';
 import { useWishlist } from '../context/WishlistContext';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles, ThemeMode } from '../context/ThemeContext';
 import { formatRwf } from '../utils/currency';
 
 interface AccountScreenProps {
@@ -20,16 +21,13 @@ const STATUS_LABEL: Record<string, string> = {
   DELIVERED: 'Delivered'
 };
 
+// The auth gate at the app root guarantees a signed-in user by the time this
+// screen ever mounts — no logged-out state to render here.
 export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickView }) => {
-  const { user, coupons, login, signup, logout } = useAuth();
+  const { user, coupons, logout } = useAuth();
   const { wishlistIds } = useWishlist();
-
-  const [isLoginMode, setIsLoginMode] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const { colors, mode, setMode } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
@@ -45,93 +43,13 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
       .finally(() => setLoadingOrders(false));
   }, [user]);
 
-  const handleAuth = async () => {
-    setAuthError('');
-    setAuthSubmitting(true);
-    const result = isLoginMode ? await login(email, password) : await signup(name, email, password);
-    setAuthSubmitting(false);
-    if (!result.ok) setAuthError(result.error || 'Something went wrong.');
-  };
-
   const wishlistedProducts = products.filter((p) => wishlistIds.includes(p.id));
   const orderCount = orders.length;
   const ordersUntilCoupon = orderCount === 0 ? 2 : 2 - (orderCount % 2 === 0 ? 0 : orderCount % 2);
   const ordersUntilFreeDelivery = orderCount === 0 ? 5 : 5 - (orderCount % 5 === 0 ? 0 : orderCount % 5);
   const freeDeliveryCredits = user?.freeDeliveryCredits ?? 0;
 
-  if (!user) {
-    return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.authContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.authHeader}>
-          <View style={styles.userIconBox}>
-            <User size={36} color={colors.primary} />
-          </View>
-          <Text style={styles.authTitle}>
-            {isLoginMode ? 'Welcome Back' : 'Create Cellar Account'}
-          </Text>
-          <Text style={styles.authSub}>
-            {isLoginMode ? 'Sign in to access past orders & VIP rewards' : 'Join Rwanda premier spirits membership club'}
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          {!isLoginMode && (
-            <View style={styles.field}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput
-                value={name}
-                onChangeText={setName}
-                placeholder="Enter your full name"
-                placeholderTextColor={colors.textMuted}
-                style={styles.input}
-              />
-            </View>
-          )}
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Email Address</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="name@domain.com"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={styles.input}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor={colors.textMuted}
-              secureTextEntry
-              style={styles.input}
-            />
-          </View>
-
-          {Boolean(authError) && <Text style={styles.errorText}>{authError}</Text>}
-
-          <TouchableOpacity onPress={handleAuth} style={styles.submitBtn} activeOpacity={0.85} disabled={authSubmitting}>
-            {authSubmitting ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <Text style={styles.submitBtnText}>{isLoginMode ? 'Sign In' : 'Create Account'}</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setIsLoginMode(!isLoginMode)} style={{ marginTop: 16, alignItems: 'center' }}>
-            <Text style={styles.switchAuthText}>
-              {isLoginMode ? "Don't have an account? Sign up" : 'Already registered? Sign in'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    );
-  }
+  if (!user) return null;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
@@ -263,11 +181,40 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
           ))}
         </View>
       )}
+
+      {/* Appearance Section */}
+      <View style={styles.sectionTitleRow}>
+        <Sun size={18} color={colors.primary} style={{ marginRight: 8 }} />
+        <Text style={styles.sectionTitle}>APPEARANCE</Text>
+      </View>
+
+      <View style={styles.themeRow}>
+        {THEME_OPTIONS.map(({ value, label, icon: Icon }) => {
+          const selected = mode === value;
+          return (
+            <TouchableOpacity
+              key={value}
+              onPress={() => setMode(value)}
+              style={[styles.themePill, selected && styles.themePillSelected]}
+              activeOpacity={0.85}
+            >
+              <Icon size={16} color={selected ? '#ffffff' : colors.primary} />
+              <Text style={[styles.themePillText, selected && styles.themePillTextSelected]}>{label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const THEME_OPTIONS: { value: ThemeMode; label: string; icon: React.ComponentType<any> }[] = [
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
+  { value: 'system', label: 'System', icon: Smartphone }
+];
+
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -275,91 +222,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 16,
     paddingBottom: 40,
-  },
-  authContainer: {
-    padding: 20,
-    justifyContent: 'center',
-  },
-  authHeader: {
-    alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 20,
-  },
-  userIconBox: {
-    width: 72,
-    height: 72,
-    borderRadius: 24,
-    backgroundColor: colors.primaryContainer,
-    borderWidth: 1.5,
-    borderColor: colors.badgeBorder,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  authTitle: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 6,
-  },
-  authSub: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    padding: 20,
-  },
-  field: {
-    marginBottom: 16,
-  },
-  label: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: colors.bgElevated,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-    paddingHorizontal: 16,
-    height: 52,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 13,
-    marginBottom: 12,
-    fontWeight: '600',
-  },
-  submitBtn: {
-    backgroundColor: colors.primary,
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  submitBtnText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  switchAuthText: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '700',
   },
   profileCard: {
     backgroundColor: colors.card,
@@ -585,5 +447,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginTop: 2,
+  },
+  themeRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  themePill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.cardBorder,
+    paddingVertical: 12,
+  },
+  themePillSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  themePillText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  themePillTextSelected: {
+    color: '#ffffff',
   },
 });

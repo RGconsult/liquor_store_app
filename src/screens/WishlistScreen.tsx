@@ -5,7 +5,8 @@ import { ProductCard } from '../components/ProductCard';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuth } from '../context/AuthContext';
 import { Heart } from 'lucide-react-native';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 interface WishlistScreenProps {
   products: Product[];
@@ -15,6 +16,8 @@ interface WishlistScreenProps {
 export const WishlistScreen: React.FC<WishlistScreenProps> = ({ products, onQuickView }) => {
   const { user } = useAuth();
   const { wishlistIds } = useWishlist();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const wishlisted = products.filter((p) => wishlistIds.includes(p.id));
 
   return (
@@ -53,7 +56,7 @@ export const WishlistScreen: React.FC<WishlistScreenProps> = ({ products, onQuic
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,

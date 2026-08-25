@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, StatusBar, Platform, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { RefreshCw } from 'lucide-react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { hydrateStorage } from './services/storage';
 
-import { AuthProvider } from './context/AuthContext';
-import { CartProvider } from './context/CartContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { CartProvider, useCart } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ChatProvider } from './context/ChatContext';
+import { ThemeProvider, useTheme, useThemedStyles } from './context/ThemeContext';
 
 import { Header } from './components/Header';
 import { BottomNavigation } from './components/BottomNavigation';
-import { AgeVerificationModal } from './components/AgeVerificationModal';
 import { ProductQuickViewModal } from './components/ProductQuickViewModal';
 
 import { HomeScreen } from './screens/HomeScreen';
@@ -21,13 +23,19 @@ import { CheckoutScreen } from './screens/CheckoutScreen';
 import { AccountScreen } from './screens/AccountScreen';
 import { NotificationsScreen } from './screens/NotificationsScreen';
 import { WishlistScreen } from './screens/WishlistScreen';
+import { ChatScreen } from './screens/ChatScreen';
+import { AuthGateScreen } from './screens/AuthGateScreen';
+import { ThemeChoiceScreen } from './screens/ThemeChoiceScreen';
 
 import { fetchProducts, fetchCategories } from './services/api';
 import { Product, LiquorCategory } from './types';
-import { colors } from './theme';
+import { lightColors, ColorPalette } from './theme';
 
 export const MainApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const { registerOnAdd } = useCart();
+  const { colors, resolvedScheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -62,6 +70,13 @@ export const MainApp: React.FC = () => {
     setActiveTab(tab);
   };
 
+  // Land on the cart right after anything is added, so the user can see it's there.
+  useEffect(() => {
+    registerOnAdd(() => goToTab('cart'));
+    return () => registerOnAdd(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSelectCategory = (cat: LiquorCategory) => {
     setCatalogInitialSearch(undefined);
     setCatalogInitialCategory(cat);
@@ -76,11 +91,8 @@ export const MainApp: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ExpoStatusBar style="dark" />
+      <ExpoStatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
       <View style={styles.container}>
-        {/* 18+ Mandatory Age Modal */}
-        <AgeVerificationModal />
-
         {/* Sticky Header */}
         <Header activeTab={activeTab} setActiveTab={goToTab} />
 
@@ -148,6 +160,8 @@ export const MainApp: React.FC = () => {
 
           {activeTab === 'notifications' && <NotificationsScreen />}
 
+          {activeTab === 'chat' && <ChatScreen />}
+
           {activeTab === 'wishlist' && (
             <WishlistScreen
               products={products}
@@ -169,11 +183,10 @@ export const MainApp: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.bg,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   container: {
     flex: 1,
@@ -218,6 +231,51 @@ const styles = StyleSheet.create({
   },
 });
 
+// Requires a signed-in user before any storefront content (Home, Catalog, etc.)
+// is reachable — shows the sign-in/sign-up form until that's true. A brand new
+// signup is then walked through a one-time appearance choice before entering.
+const AuthGate: React.FC = () => {
+  const { user, isLoading, justSignedUp, clearJustSignedUp } = useAuth();
+  const { applyRemoteMode, systemColors } = useTheme();
+
+  // Once we know who's signed in, adopt whatever appearance they'd already
+  // chosen on file — so it follows them to a new device or after a reinstall.
+  useEffect(() => {
+    if (user?.themeMode) applyRemoteMode(user.themeMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.themeMode]);
+
+  if (isLoading) {
+    // We don't yet know whether anyone's signed in, so there's no account
+    // preference to honor — match the phone's system appearance.
+    return (
+      <View style={{ flex: 1, backgroundColor: systemColors.bg, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={systemColors.primary} />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return <AuthGateScreen />;
+  }
+
+  if (justSignedUp) {
+    return <ThemeChoiceScreen onDone={clearJustSignedUp} />;
+  }
+
+  return (
+    <CartProvider userId={user.id}>
+      <WishlistProvider>
+        <NotificationProvider>
+          <ChatProvider>
+            <MainApp />
+          </ChatProvider>
+        </NotificationProvider>
+      </WishlistProvider>
+    </CartProvider>
+  );
+};
+
 export default function App() {
   const [storageReady, setStorageReady] = useState(false);
 
@@ -231,22 +289,22 @@ export default function App() {
   }, []);
 
   if (!storageReady) {
+    // Theme preference hasn't been hydrated from storage yet — fall back to
+    // the default light palette for this one brief frame.
     return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={{ flex: 1, backgroundColor: lightColors.bg, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={lightColors.primary} />
       </View>
     );
   }
 
   return (
-    <AuthProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <NotificationProvider>
-            <MainApp />
-          </NotificationProvider>
-        </WishlistProvider>
-      </CartProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AuthGate />
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

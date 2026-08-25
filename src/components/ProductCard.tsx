@@ -4,7 +4,8 @@ import { Product } from '../types';
 import { Heart, Plus } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatRwf } from '../utils/currency';
 
 interface ProductCardProps {
@@ -13,6 +14,8 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { addToCart } = useCart();
   const { toggleWishlist, isWishlisted } = useWishlist();
   const wishlisted = isWishlisted(product.id);
@@ -53,7 +56,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }
         >
           <Heart
             size={18}
-            color={wishlisted ? '#ffffff' : colors.text}
+            // The button's backdrop is always a fixed near-white circle (for
+            // legibility over any product photo), so the icon needs a fixed
+            // dark color here too — colors.text would turn near-white in dark
+            // mode and vanish against it.
+            color={wishlisted ? '#ffffff' : '#1e293b'}
             fill={wishlisted ? '#ffffff' : 'transparent'}
           />
         </TouchableOpacity>
@@ -80,7 +87,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: 20,

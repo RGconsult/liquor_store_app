@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, Modal, Pressable } from 'react-native';
-import { Wine, PhoneCall, ShoppingBag, Heart, Bell, Menu, ChevronRight } from 'lucide-react-native';
+import { Wine, PhoneCall, ShoppingBag, Heart, Bell, Menu, ChevronRight, MessageCircle } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotifications } from '../context/NotificationContext';
-import { colors } from '../theme';
+import { useChat } from '../context/ChatContext';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 interface HeaderProps {
   activeTab: string;
@@ -15,6 +17,9 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
   const { itemCount } = useCart();
   const { wishlistIds } = useWishlist();
   const { unreadCount } = useNotifications();
+  const { unreadCount: chatUnreadCount } = useChat();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleCall = () => {
@@ -27,10 +32,11 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
     setActiveTab(tab);
   };
 
-  const totalAlerts = unreadCount + wishlistIds.length + itemCount;
+  const totalAlerts = unreadCount + wishlistIds.length + itemCount + chatUnreadCount;
 
   const menuItems = [
     { key: 'call', label: 'Call the Store', icon: PhoneCall, onPress: handleCall, count: 0 },
+    { key: 'chat', label: 'Chat with Us', icon: MessageCircle, onPress: () => goTo('chat'), count: chatUnreadCount },
     { key: 'notifications', label: 'Notifications', icon: Bell, onPress: () => goTo('notifications'), count: unreadCount },
     { key: 'wishlist', label: 'Wishlist', icon: Heart, onPress: () => goTo('wishlist'), count: wishlistIds.length },
     { key: 'cart', label: 'Shopping Bag', icon: ShoppingBag, onPress: () => goTo('cart'), count: itemCount }
@@ -111,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',

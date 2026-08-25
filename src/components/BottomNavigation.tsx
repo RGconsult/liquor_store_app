@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Home, Compass, Heart, ShoppingBag, User } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 interface BottomNavProps {
   activeTab: string;
@@ -13,6 +14,8 @@ interface BottomNavProps {
 export const BottomNavigation: React.FC<BottomNavProps> = ({ activeTab, setActiveTab }) => {
   const { itemCount } = useCart();
   const { wishlistIds } = useWishlist();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   const tabs = [
     { id: 'home', label: 'Home', icon: Home },
@@ -64,7 +67,7 @@ export const BottomNavigation: React.FC<BottomNavProps> = ({ activeTab, setActiv
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     backgroundColor: colors.bgElevated,
     borderTopWidth: 1,

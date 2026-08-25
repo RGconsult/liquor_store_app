@@ -1,38 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 import { Sparkles, Truck, ChevronRight } from 'lucide-react-native';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 interface HeroCarouselProps {
   onSelectCategory: (cat: string) => void;
 }
 
 export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onSelectCategory }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [slide, setSlide] = useState(0);
 
   const slides = [
     {
       id: 1,
-      tag: 'FEATURED SPOTLIGHT',
-      title: 'Monkey Shoulder Blended Malt',
-      subtitle: 'Rich vanilla & smooth toasted oak complexity from Speyside, Scotland.',
-      category: 'Whiskey',
+      tag: 'OUR SELECTION',
+      title: 'Wines & Spirits, Done Right',
+      subtitle: 'A trusted range of authentic wines, whiskeys, and spirits, all in one store.',
+      category: 'ALL',
+      cta: 'Browse Store',
       bgImage: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=1000&q=80'
     },
     {
       id: 2,
-      tag: 'KIGALI EXPRESS DELIVERY',
-      title: 'Chilled Delivery in 30 Mins',
-      subtitle: 'Free delivery milestone automatically unlocked on your 5th cellar order.',
-      category: 'Wine',
+      tag: 'FAST DELIVERY',
+      title: 'Delivered To Your Door',
+      subtitle: 'Order from your phone and get fast, reliable delivery across Kigali.',
+      category: 'ALL',
+      cta: 'Order Now',
       bgImage: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1000&q=80'
     },
     {
       id: 3,
-      tag: 'ULTRA PREMIUM SELECTION',
-      title: 'Patrón Silver 100% Agave',
-      subtitle: 'Handcrafted in Jalisco, Mexico. Ultra-smooth with citrus & fresh agave finish.',
-      category: 'Tequila',
+      tag: 'TRUSTED SERVICE',
+      title: 'Genuine Bottles, Every Time',
+      subtitle: 'Every order is handled with care, so what you order is what arrives.',
+      category: 'ALL',
+      cta: 'Start Shopping',
       bgImage: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1000&q=80'
     }
   ];
@@ -79,7 +85,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onSelectCategory }) 
               style={styles.exploreBtn}
               activeOpacity={0.85}
             >
-              <Text style={styles.exploreBtnText}>Explore {active.category}</Text>
+              <Text style={styles.exploreBtnText}>{active.cta}</Text>
               <ChevronRight size={16} color="#ffffff" />
             </TouchableOpacity>
 
@@ -105,7 +111,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onSelectCategory }) 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   cardContainer: {
     marginHorizontal: 16,
     marginVertical: 14,

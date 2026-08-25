@@ -4,7 +4,8 @@ import { Product } from '../types';
 import { X, Heart, ShoppingBag, MapPin, Check } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatRwf } from '../utils/currency';
 
 interface ProductQuickViewModalProps {
@@ -13,6 +14,8 @@ interface ProductQuickViewModalProps {
 }
 
 export const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({ product, onClose }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { addToCart } = useCart();
   const { toggleWishlist, isWishlisted } = useWishlist();
   const [quantity, setQuantity] = useState(1);
@@ -60,7 +63,9 @@ export const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({ pr
                 onPress={handleToggleWishlist}
                 style={[styles.wishlistBtn, wishlisted && styles.wishlistBtnActive]}
               >
-                <Heart size={18} color={wishlisted ? '#fff' : colors.text} fill={wishlisted ? '#fff' : 'transparent'} />
+                {/* Backdrop here is a fixed dark overlay regardless of theme,
+                    so the icon needs a fixed light color to stay legible. */}
+                <Heart size={18} color="#ffffff" fill={wishlisted ? '#fff' : 'transparent'} />
               </TouchableOpacity>
             </View>
 
@@ -136,7 +141,7 @@ export const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({ pr
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.85)',

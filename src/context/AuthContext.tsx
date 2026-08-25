@@ -8,8 +8,10 @@ interface AuthContextType {
   coupons: Coupon[];
   token: string | null;
   isLoading: boolean;
+  justSignedUp: boolean;
+  clearJustSignedUp: () => void;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
-  signup: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signup: (name: string, email: string, password: string, dateOfBirth: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   refreshMe: () => Promise<void>;
   setSession: (user: User, token: string) => Promise<void>;
@@ -22,6 +24,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [token, setToken] = useState<string | null>(() => getItem('rv_jwt_token'));
   const [isLoading, setIsLoading] = useState(true);
+  const [justSignedUp, setJustSignedUp] = useState(false);
+  const clearJustSignedUp = () => setJustSignedUp(false);
 
   const refreshMe = useCallback(async () => {
     try {
@@ -66,10 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (name: string, email: string, password: string) => {
+  const signup = async (name: string, email: string, password: string, dateOfBirth: string) => {
     try {
-      const { user: newUser, token: sessionToken } = await signupRequest(name, email, password);
+      const { user: newUser, token: sessionToken } = await signupRequest(name, email, password, dateOfBirth);
       await setSession(newUser, sessionToken);
+      setJustSignedUp(true);
       return { ok: true };
     } catch (e: any) {
       return { ok: false, error: e?.message || 'Could not create account.' };
@@ -82,10 +87,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     setUser(null);
     setCoupons([]);
+    setJustSignedUp(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, coupons, token, isLoading, login, signup, logout, refreshMe, setSession }}>
+    <AuthContext.Provider
+      value={{ user, coupons, token, isLoading, justSignedUp, clearJustSignedUp, login, signup, logout, refreshMe, setSession }}
+    >
       {children}
     </AuthContext.Provider>
   );

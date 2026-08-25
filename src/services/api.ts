@@ -1,4 +1,4 @@
-import { Product, CategoryItem, Order, NotificationItem, User, Coupon } from '../types';
+import { Product, CategoryItem, Order, NotificationItem, User, Coupon, ChatMessage } from '../types';
 import { getItem } from './storage';
 import { API_BASE_URL } from '../config';
 
@@ -10,13 +10,19 @@ class ApiError extends Error {
   }
 }
 
-async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
+const REQUEST_TIMEOUT_MS = 20000;
+
+async function apiFetch(path: string, options: RequestInit = {}, timeoutMs: number = REQUEST_TIMEOUT_MS): Promise<any> {
   const token = getItem('rv_jwt_token');
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   let res: Response;
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -24,7 +30,12 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<any> {
       }
     });
   } catch (e) {
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new ApiError('The store is taking too long to respond. Please try again.', 0);
+    }
     throw new ApiError('Could not reach the store. Check your internet connection and try again.', 0);
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   const data = await res.json().catch(() => ({}));
@@ -63,10 +74,15 @@ export async function loginRequest(email: string, password: string): Promise<{ u
   return { user: data.user, token: data.token };
 }
 
-export async function signupRequest(name: string, email: string, password: string): Promise<{ user: User; token: string }> {
+export async function signupRequest(
+  name: string,
+  email: string,
+  password: string,
+  dateOfBirth: string
+): Promise<{ user: User; token: string }> {
   const data = await apiFetch('/auth/signup', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password })
+    body: JSON.stringify({ name, email, password, dateOfBirth })
   });
   return { user: data.user, token: data.token };
 }
@@ -80,13 +96,22 @@ export async function fetchMe(): Promise<{ user: User; coupons: Coupon[] }> {
   return { user: data.user, coupons: data.coupons };
 }
 
+export async function updateThemePreference(themeMode: 'light' | 'dark' | 'system'): Promise<User> {
+  const data = await apiFetch('/auth/me', { method: 'PATCH', body: JSON.stringify({ themeMode }) });
+  return data.user as User;
+}
+
 export async function submitOrder(orderData: unknown): Promise<{
   orderId: string;
+  order: Order;
   earnedCoupon: { code: string; percentOff: number } | null;
   earnedFreeDelivery: boolean;
   token?: string | null;
 }> {
-  return apiFetch('/orders', { method: 'POST', body: JSON.stringify(orderData) });
+  // Order creation touches several tables in one transaction (order, items, coupon,
+  // loyalty updates) plus a cold Neon connection on the first request — give it more
+  // room than a plain GET before giving up.
+  return apiFetch('/orders', { method: 'POST', body: JSON.stringify(orderData) }, 45000);
 }
 
 export async function fetchOrders(): Promise<Order[]> {
@@ -110,6 +135,21 @@ export async function fetchNotifications(): Promise<NotificationItem[]> {
 
 export async function registerPushToken(pushToken: string): Promise<void> {
   await apiFetch('/push-token', { method: 'POST', body: JSON.stringify({ pushToken }) });
+}
+
+export async function fetchChatMessages(): Promise<ChatMessage[]> {
+  const data = await apiFetch('/chat');
+  return data.messages as ChatMessage[];
+}
+
+export async function sendChatMessage(body: string): Promise<{ message: ChatMessage; aiMessage: ChatMessage | null }> {
+  const data = await apiFetch('/chat', { method: 'POST', body: JSON.stringify({ body }) });
+  return { message: data.message as ChatMessage, aiMessage: (data.aiMessage as ChatMessage) ?? null };
+}
+
+export async function fetchChatUnreadCount(): Promise<number> {
+  const data = await apiFetch('/chat/unread-count');
+  return data.unreadCount as number;
 }
 
 export { ApiError };

@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { submitOrder, fetchOrders, ApiError } from '../services/api';
+import { submitOrder, ApiError } from '../services/api';
 import { rwfToUsd, formatRwf } from '../utils/currency';
 import { DELIVERY_FEE_RWF } from '../constants/pricing';
 import { Order } from '../types';
 import { CheckCircle2, Smartphone, CreditCard, Store, ShieldCheck } from 'lucide-react-native';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 interface CheckoutScreenProps {
   onNavigateHome: () => void;
@@ -17,6 +18,8 @@ interface CheckoutScreenProps {
 type PaymentMethodUi = 'momo' | 'card' | 'pickup_counter';
 
 export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, onNavigateAccount }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { cart, subtotalUsd, clearCart } = useCart();
   const { user, coupons, refreshMe } = useAuth();
 
@@ -29,6 +32,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('Kigali');
   const [province, setProvince] = useState('Kigali City');
+  const [contactPhone, setContactPhone] = useState('');
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodUi>('momo');
   const [momoNumber, setMomoNumber] = useState('');
@@ -64,6 +68,10 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
       setError('Please enter your delivery address.');
       return;
     }
+    if (!isPickup && !contactPhone.trim()) {
+      setError('Please enter a contact number so our driver can reach you.');
+      return;
+    }
     if (paymentMethod === 'momo' && !momoNumber.trim()) {
       setError('Please enter your Mobile Money number.');
       return;
@@ -83,6 +91,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
           fulfillmentType,
           fullName,
           email,
+          contactPhone: isPickup ? undefined : contactPhone,
           address: isPickup ? 'In-Store Pick-up (Kigali Boutique)' : address,
           city: isPickup ? 'Kigali' : city,
           province: isPickup ? 'Kigali City' : province,
@@ -107,15 +116,9 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
       }
       setRewardMessages(messages);
 
-      // Fetch the authoritative, server-computed order (status, exact totals) rather
-      // than re-deriving it client-side.
-      try {
-        const orders = await fetchOrders();
-        const created = orders.find((o) => o.id === res.orderId) ?? orders[0] ?? null;
-        setCompletedOrder(created);
-      } catch {
-        setCompletedOrder(null);
-      }
+      // The server already returns the authoritative, fully-computed order
+      // (status, exact totals) — no need for a second round trip to fetch it.
+      setCompletedOrder(res.order);
 
       refreshMe().catch(() => {});
     } catch (e) {
@@ -162,6 +165,12 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
             <Text style={styles.summaryLabel}>Customer:</Text>
             <Text style={styles.summaryVal}>{details.fullName}</Text>
           </View>
+          {Boolean(details.contactPhone) && (
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Contact Number:</Text>
+              <Text style={styles.summaryVal}>{details.contactPhone}</Text>
+            </View>
+          )}
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Payment Status:</Text>
             <Text style={[styles.summaryVal, { color: colors.primary }]}>
@@ -294,6 +303,18 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
             <View style={styles.field}>
               <Text style={styles.label}>City</Text>
               <TextInput value={city} onChangeText={setCity} style={styles.input} />
+            </View>
+            <View style={styles.field}>
+              <Text style={styles.label}>Contact Number</Text>
+              <TextInput
+                value={contactPhone}
+                onChangeText={setContactPhone}
+                placeholder="e.g. 0788 123 456"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="phone-pad"
+                style={styles.input}
+              />
+              <Text style={styles.helperText}>So our driver can reach you when they arrive.</Text>
             </View>
           </>
         )}
@@ -503,7 +524,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   contentContainer: { padding: 16, paddingBottom: 40 },
   header: { paddingVertical: 14 },
@@ -557,6 +578,7 @@ const styles = StyleSheet.create({
     height: 52
   },
   inputDisabled: { color: colors.textMuted },
+  helperText: { color: colors.textMuted, fontSize: 12, marginTop: 6 },
   pickupInfoBox: {
     backgroundColor: colors.primaryContainer,
     borderRadius: 14,

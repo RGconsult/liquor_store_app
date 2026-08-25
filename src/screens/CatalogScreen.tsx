@@ -4,7 +4,8 @@ import { Product, LiquorCategory } from '../types';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { ProductCard } from '../components/ProductCard';
 import { Search, Sparkles } from 'lucide-react-native';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { usdToRwf } from '../utils/currency';
 
 interface CatalogScreenProps {
@@ -24,6 +25,8 @@ export const CatalogScreen: React.FC<CatalogScreenProps> = ({
   initialCategory,
   autoFocusSearch
 }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [search, setSearch] = useState(initialSearch || '');
   const [selectedCat, setSelectedCat] = useState<LiquorCategory>(initialCategory || 'ALL');
   const [sortOrder, setSortOrder] = useState<'featured' | 'price-asc' | 'price-desc' | 'name'>('featured');
@@ -137,7 +140,7 @@ export const CatalogScreen: React.FC<CatalogScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,

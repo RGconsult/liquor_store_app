@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet } from 'react-native';
 import { useCart } from '../context/CartContext';
-import { ShoppingBag, Trash2, ArrowRight } from 'lucide-react-native';
-import { colors } from '../theme';
+import { ShoppingBag, Trash2, ArrowRight, PlusCircle } from 'lucide-react-native';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatRwf } from '../utils/currency';
 
 interface CartScreenProps {
@@ -12,6 +13,8 @@ interface CartScreenProps {
 
 export const CartScreen: React.FC<CartScreenProps> = ({ onNavigateCheckout, onNavigateCatalog }) => {
   const { cart, removeFromCart, updateQuantity, itemCount, subtotalUsd } = useCart();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   if (cart.length === 0) {
     return (
@@ -97,11 +100,16 @@ export const CartScreen: React.FC<CartScreenProps> = ({ onNavigateCheckout, onNa
         <Text style={styles.checkoutBtnText}>Proceed to Checkout</Text>
         <ArrowRight size={22} color="#ffffff" />
       </TouchableOpacity>
+
+      <TouchableOpacity onPress={onNavigateCatalog} style={styles.addMoreBtn} activeOpacity={0.85}>
+        <PlusCircle size={18} color={colors.primary} />
+        <Text style={styles.addMoreBtnText}>Add More Products</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -322,6 +330,25 @@ const styles = StyleSheet.create({
   checkoutBtnText: {
     color: '#ffffff',
     fontSize: 16,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  addMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.card,
+    borderWidth: 1.5,
+    borderColor: colors.cardBorder,
+    height: 50,
+    borderRadius: 16,
+    gap: 8,
+    marginTop: 12,
+  },
+  addMoreBtnText: {
+    color: colors.primary,
+    fontSize: 14,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.5,

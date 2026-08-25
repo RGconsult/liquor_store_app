@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { LiquorCategory } from '../types';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useThemedStyles } from '../context/ThemeContext';
 
 interface CategoryFilterProps {
   selectedCategory: LiquorCategory;
@@ -25,6 +26,8 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   onSelectCategory,
   categoriesWithCount = []
 }) => {
+  const styles = useThemedStyles(createStyles);
+
   // Keep the currently selected category pinned right after "All Bottles" so it's
   // always visible without needing to scroll the row to find it.
   const orderedList = useMemo(() => {
@@ -77,7 +80,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     marginVertical: 14,
   },

@@ -45,6 +45,7 @@ export interface User {
   name: string;
   role: 'customer' | 'admin';
   freeDeliveryCredits?: number;
+  themeMode?: 'light' | 'dark' | 'system' | null;
   memberSince?: string;
   pushToken?: string;
 }
@@ -62,6 +63,7 @@ export interface DeliveryDetails {
   fulfillmentType: 'delivery' | 'pickup';
   fullName: string;
   email: string;
+  contactPhone?: string;
   address: string;
   city: string;
   province: string;
@@ -99,4 +101,11 @@ export interface NotificationItem {
   message: string;
   timestamp: string;
   read: boolean;
+}
+
+export interface ChatMessage {
+  id: string;
+  sender: 'customer' | 'admin' | 'ai';
+  body: string;
+  createdAt: string;
 }

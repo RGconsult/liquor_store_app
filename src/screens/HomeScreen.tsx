@@ -6,7 +6,8 @@ import { CategoryShowcase } from '../components/CategoryShowcase';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { ProductCard } from '../components/ProductCard';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
-import { colors } from '../theme';
+import { ColorPalette } from '../theme';
+import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
 interface HomeScreenProps {
   products: Product[];
@@ -25,6 +26,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onQuickView,
   onNavigateCatalog
 }) => {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearchChange = (text: string) => {
@@ -91,7 +94,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorPalette) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
