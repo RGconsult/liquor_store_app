@@ -12,10 +12,13 @@ interface CategoryShowcaseProps {
 const SHOWCASE_ITEMS: { id: LiquorCategory; label: string; image: string }[] = [
   { id: 'Whiskey', label: 'Whiskey', image: BOTTLE_IMAGES.Whiskey },
   { id: 'Tequila', label: 'Tequila', image: BOTTLE_IMAGES.Tequila },
+  { id: 'Cognac', label: 'Cognac', image: BOTTLE_IMAGES.Cognac },
   { id: 'Brandy', label: 'Brandy', image: BOTTLE_IMAGES.Brandy },
   { id: 'Gin', label: 'Gin', image: BOTTLE_IMAGES.Gin },
   { id: 'Rum', label: 'Rum', image: BOTTLE_IMAGES.Rum },
   { id: 'Vodka', label: 'Vodka', image: BOTTLE_IMAGES.Vodka },
+  { id: 'Liqueur', label: 'Liqueur', image: BOTTLE_IMAGES.Liqueur },
+  { id: 'Champagne', label: 'Champagne', image: BOTTLE_IMAGES.Champagne },
   { id: 'Wine', label: 'Wine', image: BOTTLE_IMAGES.Wine },
 ];
 

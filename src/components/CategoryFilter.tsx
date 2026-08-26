@@ -13,7 +13,10 @@ interface CategoryFilterProps {
 export const CATEGORY_LIST: { id: LiquorCategory; label: string }[] = [
   { id: 'ALL', label: 'All Bottles' },
   { id: 'Brandy', label: 'Brandy' },
+  { id: 'Champagne', label: 'Champagne' },
+  { id: 'Cognac', label: 'Cognac' },
   { id: 'Gin', label: 'Gin' },
+  { id: 'Liqueur', label: 'Liqueur' },
   { id: 'Rum', label: 'Rum' },
   { id: 'Tequila', label: 'Tequila' },
   { id: 'Vodka', label: 'Vodka' },
@@ -44,7 +47,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
       <View style={styles.headerRow}>
         <Text style={styles.title}>CATEGORIES</Text>
         <View style={styles.dot} />
-        <Text style={styles.subtitle}>7 Liquor Types</Text>
+        <Text style={styles.subtitle}>{CATEGORY_LIST.length - 1} Liquor Types</Text>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollList}>

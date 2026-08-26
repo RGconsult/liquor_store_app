@@ -8,4 +8,6 @@ export const BOTTLE_IMAGES: Record<string, string> = {
   Vodka: 'https://images.unsplash.com/photo-1645784125144-4c06a561fc58?auto=format&fit=crop&w=800&q=80',
   Wine: 'https://images.unsplash.com/photo-1610631787813-9eeb1a2386cc?auto=format&fit=crop&w=800&q=80',
   Champagne: 'https://images.unsplash.com/photo-1743184579851-5ec9972100b3?auto=format&fit=crop&w=800&q=80',
+  Cognac: 'https://images.unsplash.com/photo-1579042927066-007d0653436d?auto=format&fit=crop&w=800&q=80',
+  Liqueur: 'https://images.unsplash.com/photo-1571132947667-9aed419747cf?auto=format&fit=crop&w=800&q=80',
 };

@@ -1,4 +1,15 @@
-export type LiquorCategory = 'Brandy' | 'Gin' | 'Rum' | 'Tequila' | 'Vodka' | 'Whiskey' | 'Wine' | 'ALL';
+export type LiquorCategory =
+  | 'Brandy'
+  | 'Champagne'
+  | 'Cognac'
+  | 'Gin'
+  | 'Liqueur'
+  | 'Rum'
+  | 'Tequila'
+  | 'Vodka'
+  | 'Whiskey'
+  | 'Wine'
+  | 'ALL';
 
 export interface Product {
   id: string;
