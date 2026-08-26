@@ -1,16 +1,7 @@
-export type LiquorCategory =
-  | 'Brandy'
-  | 'Champagne'
-  | 'Cigars'
-  | 'Cognac'
-  | 'Gin'
-  | 'Liqueur'
-  | 'Rum'
-  | 'Tequila'
-  | 'Vodka'
-  | 'Whiskey'
-  | 'Wine'
-  | 'ALL';
+// Category names live in the database (fetched via fetchCategories()), not as a fixed
+// set here — this stays a plain string (with 'ALL' as the sentinel for "no filter") so
+// adding/renaming a category server-side needs no app code change to keep working.
+export type LiquorCategory = string;
 
 export interface Product {
   id: string;

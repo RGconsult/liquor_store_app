@@ -1,35 +1,31 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
 import { LiquorCategory } from '../types';
-import { BOTTLE_IMAGES } from '../constants/bottleImages';
+import { BOTTLE_IMAGES, DEFAULT_BOTTLE_IMAGE } from '../constants/bottleImages';
 import { ColorPalette } from '../theme';
 import { useThemedStyles } from '../context/ThemeContext';
 
 interface CategoryShowcaseProps {
+  categories: { name: string }[];
   onSelectCategory: (category: LiquorCategory) => void;
 }
-
-const SHOWCASE_ITEMS: { id: LiquorCategory; label: string; image: string }[] = [
-  { id: 'Whiskey', label: 'Whiskey', image: BOTTLE_IMAGES.Whiskey },
-  { id: 'Tequila', label: 'Tequila', image: BOTTLE_IMAGES.Tequila },
-  { id: 'Cognac', label: 'Cognac', image: BOTTLE_IMAGES.Cognac },
-  { id: 'Brandy', label: 'Brandy', image: BOTTLE_IMAGES.Brandy },
-  { id: 'Gin', label: 'Gin', image: BOTTLE_IMAGES.Gin },
-  { id: 'Rum', label: 'Rum', image: BOTTLE_IMAGES.Rum },
-  { id: 'Vodka', label: 'Vodka', image: BOTTLE_IMAGES.Vodka },
-  { id: 'Liqueur', label: 'Liqueur', image: BOTTLE_IMAGES.Liqueur },
-  { id: 'Champagne', label: 'Champagne', image: BOTTLE_IMAGES.Champagne },
-  { id: 'Wine', label: 'Wine', image: BOTTLE_IMAGES.Wine },
-  { id: 'Cigars', label: 'Cigars', image: BOTTLE_IMAGES.Cigars },
-];
 
 // Pixels the strip travels per second. Lower = slower, more relaxed slide.
 const SLIDE_SPEED_PX_PER_SEC = 34;
 
-export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ onSelectCategory }) => {
+export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ categories, onSelectCategory }) => {
   const styles = useThemedStyles(createStyles);
   const translateX = useRef(new Animated.Value(0)).current;
   const [setWidth, setSetWidth] = useState(0);
+
+  // Built from whatever categories the API returns — a category added or renamed
+  // server-side shows up here automatically, falling back to a neutral bottle photo
+  // until someone sources a curated shot for it in BOTTLE_IMAGES.
+  const showcaseItems = categories.map((cat) => ({
+    id: cat.name,
+    label: cat.name,
+    image: BOTTLE_IMAGES[cat.name] || DEFAULT_BOTTLE_IMAGE
+  }));
 
   useEffect(() => {
     if (setWidth === 0) return;
@@ -48,9 +44,11 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ onSelectCate
     return () => loop.stop();
   }, [setWidth, translateX]);
 
+  if (showcaseItems.length === 0) return null;
+
   const renderSet = (keyPrefix: string) => (
     <View style={styles.row}>
-      {SHOWCASE_ITEMS.map((item) => (
+      {showcaseItems.map((item) => (
         <TouchableOpacity
           key={`${keyPrefix}-${item.id}`}
           style={styles.item}

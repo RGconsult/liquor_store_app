@@ -10,21 +10,6 @@ interface CategoryFilterProps {
   categoriesWithCount?: { name: string; productCount: number }[];
 }
 
-export const CATEGORY_LIST: { id: LiquorCategory; label: string }[] = [
-  { id: 'ALL', label: 'All Bottles' },
-  { id: 'Brandy', label: 'Brandy' },
-  { id: 'Champagne', label: 'Champagne' },
-  { id: 'Cigars', label: 'Cigars' },
-  { id: 'Cognac', label: 'Cognac' },
-  { id: 'Gin', label: 'Gin' },
-  { id: 'Liqueur', label: 'Liqueur' },
-  { id: 'Rum', label: 'Rum' },
-  { id: 'Tequila', label: 'Tequila' },
-  { id: 'Vodka', label: 'Vodka' },
-  { id: 'Whiskey', label: 'Whiskey' },
-  { id: 'Wine', label: 'Wine' }
-];
-
 export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   selectedCategory,
   onSelectCategory,
@@ -32,28 +17,34 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
 }) => {
   const styles = useThemedStyles(createStyles);
 
-  // Keep the currently selected category pinned right after "All Bottles" so it's
-  // always visible without needing to scroll the row to find it.
+  // Pills come straight from whatever categories the API actually returned — no
+  // separate hardcoded list to keep in sync when a category is added, renamed, or
+  // removed server-side. Keep the currently selected category pinned right after
+  // "All Bottles" so it's always visible without needing to scroll the row to find it.
   const orderedList = useMemo(() => {
-    if (selectedCategory === 'ALL') return CATEGORY_LIST;
-    const allItem = CATEGORY_LIST.find((c) => c.id === 'ALL')!;
-    const selectedItem = CATEGORY_LIST.find((c) => c.id === selectedCategory);
-    if (!selectedItem) return CATEGORY_LIST;
-    const rest = CATEGORY_LIST.filter((c) => c.id !== 'ALL' && c.id !== selectedCategory);
+    const dynamicList: { id: LiquorCategory; label: string }[] = [
+      { id: 'ALL', label: 'All Bottles' },
+      ...categoriesWithCount.map((c) => ({ id: c.name, label: c.name }))
+    ];
+    if (selectedCategory === 'ALL') return dynamicList;
+    const allItem = dynamicList[0];
+    const selectedItem = dynamicList.find((c) => c.id.toLowerCase() === selectedCategory.toLowerCase());
+    if (!selectedItem) return dynamicList;
+    const rest = dynamicList.filter((c) => c.id !== 'ALL' && c.id !== selectedItem.id);
     return [allItem, selectedItem, ...rest];
-  }, [selectedCategory]);
+  }, [selectedCategory, categoriesWithCount]);
 
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>CATEGORIES</Text>
         <View style={styles.dot} />
-        <Text style={styles.subtitle}>{CATEGORY_LIST.length - 1} Liquor Types</Text>
+        <Text style={styles.subtitle}>{categoriesWithCount.length} Liquor Types</Text>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollList}>
         {orderedList.map((cat) => {
-          const isActive = selectedCategory === cat.id;
+          const isActive = selectedCategory.toLowerCase() === cat.id.toLowerCase();
           const countItem = categoriesWithCount.find(
             (c) => c.name.toLowerCase() === cat.id.toLowerCase()
           );

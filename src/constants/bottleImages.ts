@@ -12,3 +12,9 @@ export const BOTTLE_IMAGES: Record<string, string> = {
   Cigars: 'https://images.unsplash.com/photo-1547652577-b4fe2f34d7ee?auto=format&fit=crop&w=800&q=80',
   Liqueur: 'https://images.unsplash.com/photo-1571132947667-9aed419747cf?auto=format&fit=crop&w=800&q=80',
 };
+
+// Shown for any category fetched from the API that doesn't have a curated photo above
+// yet (e.g. one just added via the admin panel) — keeps the showcase working without
+// code changes until someone sources a proper image for it.
+export const DEFAULT_BOTTLE_IMAGE =
+  'https://images.unsplash.com/photo-1591704951890-0862b2e98acb?auto=format&fit=crop&w=800&q=80';

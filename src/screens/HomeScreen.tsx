@@ -63,7 +63,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <HeroCarousel onSelectCategory={(cat) => onSelectCategory(cat as LiquorCategory)} />
 
       {/* Animated, sliding "explore by type" showcase row — comes before the category pills */}
-      <CategoryShowcase onSelectCategory={onSelectCategory} />
+      <CategoryShowcase categories={categories} onSelectCategory={onSelectCategory} />
 
       {/* Category Pills Filter */}
       <CategoryFilter
