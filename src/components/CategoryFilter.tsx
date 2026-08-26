@@ -14,6 +14,7 @@ export const CATEGORY_LIST: { id: LiquorCategory; label: string }[] = [
   { id: 'ALL', label: 'All Bottles' },
   { id: 'Brandy', label: 'Brandy' },
   { id: 'Champagne', label: 'Champagne' },
+  { id: 'Cigars', label: 'Cigars' },
   { id: 'Cognac', label: 'Cognac' },
   { id: 'Gin', label: 'Gin' },
   { id: 'Liqueur', label: 'Liqueur' },

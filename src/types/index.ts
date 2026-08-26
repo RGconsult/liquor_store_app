@@ -1,6 +1,7 @@
 export type LiquorCategory =
   | 'Brandy'
   | 'Champagne'
+  | 'Cigars'
   | 'Cognac'
   | 'Gin'
   | 'Liqueur'

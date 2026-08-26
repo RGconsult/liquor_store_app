@@ -38,7 +38,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   };
 
-  const featuredList = products.slice(0, 8);
+  // Home lists the full catalog inline rather than a curated preview — Catalog (via
+  // "View All") stays useful for its search/sort/price-tier tools on top of this list.
+  const allProductsList = products;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
@@ -73,7 +75,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* Grid Header */}
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>Cellar Selections</Text>
+          <Text style={styles.sectionTitle}>Full Cellar</Text>
           <View style={styles.countBadge}>
             <Text style={styles.countBadgeText}>{products.length} Bottles</Text>
           </View>
@@ -86,7 +88,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       {/* Product List - Single Column (1 card per row) */}
       <View style={styles.listContainer}>
-        {featuredList.map((product) => (
+        {allProductsList.map((product) => (
           <ProductCard key={product.id} product={product} onQuickView={onQuickView} />
         ))}
       </View>

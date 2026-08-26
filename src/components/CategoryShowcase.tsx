@@ -20,6 +20,7 @@ const SHOWCASE_ITEMS: { id: LiquorCategory; label: string; image: string }[] = [
   { id: 'Liqueur', label: 'Liqueur', image: BOTTLE_IMAGES.Liqueur },
   { id: 'Champagne', label: 'Champagne', image: BOTTLE_IMAGES.Champagne },
   { id: 'Wine', label: 'Wine', image: BOTTLE_IMAGES.Wine },
+  { id: 'Cigars', label: 'Cigars', image: BOTTLE_IMAGES.Cigars },
 ];
 
 // Pixels the strip travels per second. Lower = slower, more relaxed slide.
