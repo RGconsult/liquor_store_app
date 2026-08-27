@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Linking, Modal, Pressable } from 'react-native';
-import { Wine, PhoneCall, ShoppingBag, Heart, Bell, Menu, ChevronRight, MessageCircle } from 'lucide-react-native';
+import { PhoneCall, ShoppingBag, Heart, Bell, Menu, ChevronRight, MessageCircle } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -44,19 +44,16 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
 
   return (
     <View style={styles.header}>
-      {/* Company Name Logo Design matched to Web Frontend (Wine in Teal #1b5e53, & Liquor Joint in Amber #d84315) */}
+      {/* Wordmark logo — matches the storefront signage (no glass icon) */}
       <TouchableOpacity
         onPress={() => setActiveTab('home')}
         style={styles.brandContainer}
         activeOpacity={0.8}
       >
-        <View style={styles.logoBadge}>
-          <Wine size={22} color={colors.primary} />
-        </View>
         <View style={styles.titleColumn}>
           <Text style={styles.brandTitle} numberOfLines={1}>
-            <Text style={styles.brandWine}>Wine </Text>
-            <Text style={styles.brandLiquor}>& Liquor Joint</Text>
+            <Text style={styles.brandWine}>WINES </Text>
+            <Text style={styles.brandLiquor}>& LIQUOR JOINT</Text>
           </Text>
           <View style={styles.statusRow}>
             <View style={styles.openDot} />
@@ -134,25 +131,14 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  logoBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    backgroundColor: colors.primaryContainer,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
   titleColumn: {
     flex: 1,
     justifyContent: 'center',
   },
   brandTitle: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: '800',
-    letterSpacing: 0.2,
+    letterSpacing: 0.4,
   },
   brandWine: {
     color: colors.primary, // Teal Green #1b5e53 from website

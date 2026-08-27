@@ -57,11 +57,20 @@ export const CatalogScreen: React.FC<CatalogScreenProps> = ({
     filtered.sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  // Plural of the category name for the subtitle — skip appending "s" when the
+  // name already ends in one (e.g. "Cigars") so it doesn't read as "Cigarss".
+  const categoryPlural = selectedCat.toLowerCase().endsWith('s') ? selectedCat : `${selectedCat}s`;
+  const headerTitle = selectedCat === 'ALL' ? 'Cellar Catalog' : selectedCat;
+  const headerSubtitle =
+    selectedCat === 'ALL' 
+      ? 'Browse premium spirits, champagnes, and fine wines.'
+      : `Browse best ${categoryPlural}`;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Text style={styles.title}>Cellar Catalog</Text>
-        <Text style={styles.subtitle}>Browse premium spirits, champagnes, and fine wines.</Text>
+        <Text style={styles.title}>{headerTitle}</Text>
+        <Text style={styles.subtitle}>{headerSubtitle}</Text>
       </View>
 
       <View style={styles.searchBar}>

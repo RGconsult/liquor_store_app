@@ -3,11 +3,12 @@ import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Sty
 import { useAuth } from '../context/AuthContext';
 import { fetchOrders } from '../services/api';
 import { Order, Product } from '../types';
-import { Heart, LogOut, Clock, Package, Tag, Truck, Sun, Moon, Smartphone } from 'lucide-react-native';
+import { Heart, LogOut, Clock, Package, Tag, Truck, Sun, Moon, Smartphone, MapPin } from 'lucide-react-native';
 import { useWishlist } from '../context/WishlistContext';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles, ThemeMode } from '../context/ThemeContext';
 import { formatRwf } from '../utils/currency';
+import { OrderTrackingModal } from '../components/OrderTrackingModal';
 
 interface AccountScreenProps {
   products: Product[];
@@ -32,6 +33,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [ordersError, setOrdersError] = useState('');
+  const [trackingOrder, setTrackingOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -153,6 +155,15 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
                 <Text style={styles.orderTotalLabel}>Total Paid:</Text>
                 <Text style={styles.orderTotalVal}>{formatRwf(ord.totalUsd)}</Text>
               </View>
+
+              <TouchableOpacity
+                onPress={() => setTrackingOrder(ord)}
+                style={styles.trackBtn}
+                activeOpacity={0.8}
+              >
+                <MapPin size={14} color={colors.primary} />
+                <Text style={styles.trackBtnText}>Track Order</Text>
+              </TouchableOpacity>
             </View>
           ))}
         </View>
@@ -204,6 +215,8 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
           );
         })}
       </View>
+
+      <OrderTrackingModal order={trackingOrder} onClose={() => setTrackingOrder(null)} />
     </ScrollView>
   );
 };
@@ -416,6 +429,21 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  trackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: colors.primaryContainer,
+    borderRadius: 12,
+    paddingVertical: 10,
+    marginTop: 12,
+  },
+  trackBtnText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '800',
   },
   grid: {
     flexDirection: 'row',

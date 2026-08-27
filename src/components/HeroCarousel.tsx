@@ -16,27 +16,24 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onSelectCategory }) 
   const slides = [
     {
       id: 1,
-      tag: 'OUR SELECTION',
       title: 'Wines & Spirits, Done Right',
-      subtitle: 'A trusted range of authentic wines, whiskeys, and spirits, all in one store.',
+      subtitle: 'Authentic bottles, all in one store.',
       category: 'ALL',
       cta: 'Browse Store',
       bgImage: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=1000&q=80'
     },
     {
       id: 2,
-      tag: 'FAST DELIVERY',
       title: 'Delivered To Your Door',
-      subtitle: 'Order from your phone and get fast, reliable delivery across Kigali.',
+      subtitle: 'Fast delivery across Kigali.',
       category: 'ALL',
       cta: 'Order Now',
       bgImage: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1000&q=80'
     },
     {
       id: 3,
-      tag: 'TRUSTED SERVICE',
       title: 'Genuine Bottles, Every Time',
-      subtitle: 'Every order is handled with care, so what you order is what arrives.',
+      subtitle: 'What you order is what arrives.',
       category: 'ALL',
       cta: 'Start Shopping',
       bgImage: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1000&q=80'
@@ -63,10 +60,6 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onSelectCategory }) 
         <View style={styles.overlay}>
           {/* Top Tag & Indicator */}
           <View style={styles.topRow}>
-            <View style={styles.tagBadge}>
-              <Sparkles size={14} color={colors.primary} style={{ marginRight: 6 }} />
-              <Text style={styles.tagText}>{active.tag}</Text>
-            </View>
             <View style={styles.indicatorBadge}>
               <Text style={styles.indicatorText}>{slide + 1} / {slides.length}</Text>
             </View>
@@ -173,19 +166,19 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     fontWeight: '700',
   },
   contentSection: {
-    marginBottom: 18,
+    marginBottom: 14,
   },
   title: {
     color: '#ffffff',
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: '800',
-    marginBottom: 6,
-    lineHeight: 28,
+    marginBottom: 4,
+    lineHeight: 24,
   },
   subtitle: {
     color: '#e2e8f0',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
   },
   bottomRow: {
     flexDirection: 'row',
