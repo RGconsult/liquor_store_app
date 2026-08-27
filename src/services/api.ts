@@ -1,4 +1,4 @@
-import { Product, CategoryItem, Order, NotificationItem, User, Coupon, ChatMessage } from '../types';
+import { Product, CategoryItem, Order, NotificationItem, User, Coupon, ChatMessage, Promotion } from '../types';
 import { getItem } from './storage';
 import { API_BASE_URL } from '../config';
 
@@ -80,6 +80,11 @@ export async function fetchProduct(id: string): Promise<{ product: Product; rela
 export async function fetchCategories(): Promise<CategoryItem[]> {
   const data = await apiFetch('/categories');
   return data.categories as CategoryItem[];
+}
+
+export async function fetchPromotions(): Promise<Promotion[]> {
+  const data = await apiFetch('/promotions');
+  return data.promotions as Promotion[];
 }
 
 export async function loginRequest(email: string, password: string): Promise<{ user: User; token: string }> {
@@ -166,6 +171,12 @@ export async function sendChatMessage(body: string): Promise<{ message: ChatMess
 export async function fetchChatUnreadCount(): Promise<number> {
   const data = await apiFetch('/chat/unread-count');
   return data.unreadCount as number;
+}
+
+export async function logSearch(query: string): Promise<void> {
+  // Best-effort interest tracking (drives auto-wishlisting on the backend) —
+  // never worth surfacing an error to the user over.
+  await apiFetch('/search-log', { method: 'POST', body: JSON.stringify({ query }) }).catch(() => {});
 }
 
 export { ApiError };

@@ -30,6 +30,17 @@ export interface CategoryItem {
   productCount: number;
 }
 
+export interface Promotion {
+  id: string;
+  title: string;
+  subtitle: string;
+  ctaLabel: string;
+  category: string | null;
+  image: string;
+  active: boolean;
+  sortOrder: number;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;

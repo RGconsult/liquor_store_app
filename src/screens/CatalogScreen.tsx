@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Product, LiquorCategory } from '../types';
 import { CategoryFilter } from '../components/CategoryFilter';
@@ -7,6 +7,7 @@ import { Search, Sparkles } from 'lucide-react-native';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { usdToRwf } from '../utils/currency';
+import { logSearch } from '../services/api';
 
 interface CatalogScreenProps {
   products: Product[];
@@ -31,6 +32,15 @@ export const CatalogScreen: React.FC<CatalogScreenProps> = ({
   const [selectedCat, setSelectedCat] = useState<LiquorCategory>(initialCategory || 'ALL');
   const [sortOrder, setSortOrder] = useState<'featured' | 'price-asc' | 'price-desc' | 'name'>('featured');
   const [priceTier, setPriceTier] = useState<'all' | 'under50' | '50to100' | 'above100'>('all');
+
+  // Track what customers actually search for (debounced so we log settled
+  // terms, not every keystroke) — repeated searches auto-wishlist matches.
+  useEffect(() => {
+    const trimmed = search.trim();
+    if (trimmed.length < 2) return;
+    const timer = setTimeout(() => logSearch(trimmed), 1200);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   let filtered = products.filter((p) => {
     const matchesCat = selectedCat === 'ALL' || p.category.toLowerCase() === selectedCat.toLowerCase();

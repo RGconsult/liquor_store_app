@@ -1,44 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 import { Sparkles, Truck, ChevronRight } from 'lucide-react-native';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles } from '../context/ThemeContext';
+import { fetchPromotions } from '../services/api';
+import { Promotion } from '../types';
 
 interface HeroCarouselProps {
   onSelectCategory: (cat: string) => void;
 }
 
+const DEFAULT_SLIDES = [
+  {
+    id: 1,
+    title: 'Wines & Spirits, Done Right',
+    subtitle: 'Authentic bottles, all in one store.',
+    category: 'ALL',
+    cta: 'Browse Store',
+    bgImage: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=1000&q=80'
+  },
+  {
+    id: 2,
+    title: 'Delivered To Your Door',
+    subtitle: 'Fast delivery across Kigali.',
+    category: 'ALL',
+    cta: 'Order Now',
+    bgImage: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1000&q=80'
+  },
+  {
+    id: 3,
+    title: 'Genuine Bottles, Every Time',
+    subtitle: 'What you order is what arrives.',
+    category: 'ALL',
+    cta: 'Start Shopping',
+    bgImage: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1000&q=80'
+  }
+];
+
 export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onSelectCategory }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const [slide, setSlide] = useState(0);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
 
-  const slides = [
-    {
-      id: 1,
-      title: 'Wines & Spirits, Done Right',
-      subtitle: 'Authentic bottles, all in one store.',
-      category: 'ALL',
-      cta: 'Browse Store',
-      bgImage: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=1000&q=80'
-    },
-    {
-      id: 2,
-      title: 'Delivered To Your Door',
-      subtitle: 'Fast delivery across Kigali.',
-      category: 'ALL',
-      cta: 'Order Now',
-      bgImage: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1000&q=80'
-    },
-    {
-      id: 3,
-      title: 'Genuine Bottles, Every Time',
-      subtitle: 'What you order is what arrives.',
-      category: 'ALL',
-      cta: 'Start Shopping',
-      bgImage: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=1000&q=80'
-    }
-  ];
+  useEffect(() => {
+    fetchPromotions()
+      .then(setPromotions)
+      .catch(() => {});
+  }, []);
+
+  // Admin-entered promo slides take over the banner whenever at least one is
+  // active; otherwise fall back to the store's built-in default slides.
+  const slides = useMemo(() => {
+    if (promotions.length === 0) return DEFAULT_SLIDES;
+    return promotions.map((p) => ({
+      id: p.id,
+      title: p.title,
+      subtitle: p.subtitle,
+      category: p.category || 'ALL',
+      cta: p.ctaLabel,
+      bgImage: p.image
+    }));
+  }, [promotions]);
+
+  useEffect(() => {
+    setSlide(0);
+  }, [slides.length]);
 
   useEffect(() => {
     const timer = setInterval(() => {
