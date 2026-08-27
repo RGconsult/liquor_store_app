@@ -19,6 +19,18 @@
     },
     "web": {
       "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e1a4e90f-75fb-4fce-b028-7866aa3c2a42"
+      }
+    },
+    "owner": "kezamelissa",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e1a4e90f-75fb-4fce-b028-7866aa3c2a42"
     }
   }
 }
