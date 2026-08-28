@@ -51,10 +51,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab }) => {
         activeOpacity={0.8}
       >
         <View style={styles.titleColumn}>
-          <Text style={styles.brandTitle} numberOfLines={1}>
-            <Text style={styles.brandWine}>WINES </Text>
-            <Text style={styles.brandLiquor}>& LIQUOR JOINT</Text>
-          </Text>
+          <Text style={styles.brandWine} numberOfLines={1}>WINES</Text>
+          <Text style={styles.brandLiquor} numberOfLines={1}>& LIQUOR JOINT</Text>
           <View style={styles.statusRow}>
             <View style={styles.openDot} />
             <Text style={styles.statusText} numberOfLines={1}>Kigali Cellar • OPEN</Text>
@@ -135,21 +133,26 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  brandTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
   brandWine: {
     color: colors.primary, // Teal Green #1b5e53 from website
+    fontSize: 19,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+    lineHeight: 20,
+    textTransform: 'uppercase',
   },
   brandLiquor: {
     color: colors.amber,   // Warm Amber #d84315 from website
+    fontSize: 19,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+    lineHeight: 20,
+    textTransform: 'uppercase',
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 3,
+    marginTop: 4,
   },
   openDot: {
     width: 6,
