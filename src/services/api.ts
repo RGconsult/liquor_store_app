@@ -87,6 +87,16 @@ export async function fetchPromotions(): Promise<Promotion[]> {
   return data.promotions as Promotion[];
 }
 
+export interface LoyaltySettings {
+  couponEveryNOrders: number;
+  couponPercentOff: number;
+  freeDeliveryEveryNOrders: number;
+}
+
+export async function fetchLoyaltySettings(): Promise<LoyaltySettings> {
+  return apiFetch('/loyalty-settings');
+}
+
 export async function loginRequest(email: string, password: string): Promise<{ user: User; token: string }> {
   const data = await apiFetch('/auth/login', {
     method: 'POST',

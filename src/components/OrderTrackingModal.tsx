@@ -197,14 +197,14 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
   },
   currentBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.primaryContainer,
+    backgroundColor: colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     marginTop: 6,
   },
   currentBadgeText: {
-    color: colors.primary,
+    color: '#ffffff',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.5,

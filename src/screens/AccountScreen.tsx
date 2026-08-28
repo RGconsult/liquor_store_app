@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { fetchOrders } from '../services/api';
+import { fetchOrders, fetchLoyaltySettings, LoyaltySettings } from '../services/api';
 import { Order, Product } from '../types';
-import { Heart, LogOut, Clock, Package, Tag, Truck, Sun, Moon, Smartphone, MapPin } from 'lucide-react-native';
+import { Heart, LogOut, Clock, Package, Sun, Moon, Smartphone, MapPin } from 'lucide-react-native';
 import { useWishlist } from '../context/WishlistContext';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles, ThemeMode } from '../context/ThemeContext';
 import { formatRwf } from '../utils/currency';
 import { OrderTrackingModal } from '../components/OrderTrackingModal';
+import { LoyaltyTracker } from '../components/LoyaltyTracker';
 
 interface AccountScreenProps {
   products: Product[];
@@ -34,6 +35,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [ordersError, setOrdersError] = useState('');
   const [trackingOrder, setTrackingOrder] = useState<Order | null>(null);
+  const [loyaltySettings, setLoyaltySettings] = useState<LoyaltySettings | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -43,12 +45,13 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
       .then(setOrders)
       .catch((e) => setOrdersError(e?.message || 'Could not load your order history.'))
       .finally(() => setLoadingOrders(false));
+    fetchLoyaltySettings()
+      .then(setLoyaltySettings)
+      .catch(() => {});
   }, [user]);
 
   const wishlistedProducts = products.filter((p) => wishlistIds.includes(p.id));
   const orderCount = orders.length;
-  const ordersUntilCoupon = orderCount === 0 ? 2 : 2 - (orderCount % 2 === 0 ? 0 : orderCount % 2);
-  const ordersUntilFreeDelivery = orderCount === 0 ? 5 : 5 - (orderCount % 5 === 0 ? 0 : orderCount % 5);
   const freeDeliveryCredits = user?.freeDeliveryCredits ?? 0;
 
   if (!user) return null;
@@ -74,42 +77,13 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
         </View>
       </View>
 
-      {/* Loyalty Perks */}
-      <View style={styles.perksRow}>
-        <View style={styles.perkCard}>
-          <View style={styles.perkHeaderRow}>
-            <Tag size={14} color={colors.primary} />
-            <Text style={styles.perkLabel}>Coupons</Text>
-          </View>
-          {coupons.length === 0 ? (
-            <Text style={styles.perkEmptyText}>
-              {ordersUntilCoupon} more order{ordersUntilCoupon === 1 ? '' : 's'} until your next coupon.
-            </Text>
-          ) : (
-            <View style={{ gap: 4 }}>
-              {coupons.map((c) => (
-                <View key={c.id} style={styles.couponLine}>
-                  <Text style={styles.couponCode}>{c.code}</Text>
-                  <Text style={styles.couponPercent}>{c.percentOff}% off</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-
-        <View style={styles.perkCard}>
-          <View style={styles.perkHeaderRow}>
-            <Truck size={14} color={colors.primary} />
-            <Text style={styles.perkLabel}>Free Delivery</Text>
-          </View>
-          <Text style={styles.perkBigNumber}>{freeDeliveryCredits}</Text>
-          <Text style={styles.perkEmptyText}>
-            {freeDeliveryCredits > 0
-              ? 'Applied automatically at checkout.'
-              : `${ordersUntilFreeDelivery} more order${ordersUntilFreeDelivery === 1 ? '' : 's'} until your next credit.`}
-          </Text>
-        </View>
-      </View>
+      {/* Loyalty Progress */}
+      <LoyaltyTracker
+        orderCount={orderCount}
+        settings={loyaltySettings}
+        activeCoupons={coupons}
+        freeDeliveryCredits={freeDeliveryCredits}
+      />
 
       {/* Orders Section */}
       <View style={styles.sectionTitleRow}>
@@ -161,7 +135,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
                 style={styles.trackBtn}
                 activeOpacity={0.8}
               >
-                <MapPin size={14} color={colors.primary} />
+                <MapPin size={14} color="#ffffff" />
                 <Text style={styles.trackBtnText}>Track Order</Text>
               </TouchableOpacity>
             </View>
@@ -288,56 +262,6 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
   logoutBtn: {
     padding: 8,
   },
-  perksRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 8,
-  },
-  perkCard: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    padding: 14,
-  },
-  perkHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  perkLabel: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  perkBigNumber: {
-    color: colors.primary,
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  perkEmptyText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  couponLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  couponCode: {
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  couponPercent: {
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -435,13 +359,13 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: colors.primaryContainer,
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 10,
     marginTop: 12,
   },
   trackBtnText: {
-    color: colors.primary,
+    color: '#ffffff',
     fontSize: 13,
     fontWeight: '800',
   },
