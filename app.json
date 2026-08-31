@@ -6,20 +6,32 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#080706",
-    "splash": {
-      "backgroundColor": "#080706",
-      "resizeMode": "contain"
-    },
+    "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "rw.wineandliquorjoint.app"
     },
     "android": {
-      "package": "rw.wineandliquorjoint.app"
+      "package": "rw.wineandliquorjoint.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0d2b26"
+      }
     },
     "web": {
       "bundler": "metro"
     },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#080706"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "e1a4e90f-75fb-4fce-b028-7866aa3c2a42"

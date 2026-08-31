@@ -12,4 +12,11 @@ node_modules/
 # typescript
 *.tsbuildinfo
 
+# signing credentials
+*.jks
+*.p12
+*.keystore
+credentials.json
+android-keystore/
+
 PRICE LIST RGM Updated.xlsx
