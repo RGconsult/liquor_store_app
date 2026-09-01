@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'rea
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { RefreshCw } from 'lucide-react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import { hydrateStorage } from './services/storage';
+import { hydrateStorage, getItem } from './services/storage';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider, useCart } from './context/CartContext';
@@ -25,6 +25,7 @@ import { NotificationsScreen } from './screens/NotificationsScreen';
 import { WishlistScreen } from './screens/WishlistScreen';
 import { ChatScreen } from './screens/ChatScreen';
 import { AuthGateScreen } from './screens/AuthGateScreen';
+import { AgeGateScreen } from './screens/AgeGateScreen';
 import { ThemeChoiceScreen } from './screens/ThemeChoiceScreen';
 
 import { fetchProducts, fetchCategories } from './services/api';
@@ -278,10 +279,14 @@ const AuthGate: React.FC = () => {
 
 export default function App() {
   const [storageReady, setStorageReady] = useState(false);
+  const [ageVerified, setAgeVerified] = useState(false);
 
   useEffect(() => {
     hydrateStorage()
-      .then(() => setStorageReady(true))
+      .then(() => {
+        setAgeVerified(getItem('rv_age_verified') === 'true');
+        setStorageReady(true);
+      })
       .catch((err) => {
         console.warn('Storage hydration failed, continuing without cache:', err);
         setStorageReady(true); // still render the app
@@ -301,9 +306,13 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AuthProvider>
-          <AuthGate />
-        </AuthProvider>
+        {ageVerified ? (
+          <AuthProvider>
+            <AuthGate />
+          </AuthProvider>
+        ) : (
+          <AgeGateScreen onVerified={() => setAgeVerified(true)} />
+        )}
       </ThemeProvider>
     </SafeAreaProvider>
   );

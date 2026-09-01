@@ -10,7 +10,7 @@ const memoryCache: Record<string, string | null> = {};
 
 /** Call once at app startup to hydrate the in-memory cache */
 export async function hydrateStorage(): Promise<void> {
-  const keys = ['rv_jwt_token', 'rv_seen_notifications', 'rv_theme_mode'];
+  const keys = ['rv_jwt_token', 'rv_seen_notifications', 'rv_theme_mode', 'rv_age_verified'];
   await Promise.all(
     keys.map(async (key) => {
       memoryCache[key] = await AsyncStorage.getItem(key);
