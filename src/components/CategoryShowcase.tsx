@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
 import { LiquorCategory } from '../types';
-import { BOTTLE_IMAGES, DEFAULT_BOTTLE_IMAGE } from '../constants/bottleImages';
 import { ColorPalette } from '../theme';
 import { useThemedStyles } from '../context/ThemeContext';
 
 interface CategoryShowcaseProps {
-  categories: { name: string }[];
+  categories: { name: string; image?: string | null }[];
   onSelectCategory: (category: LiquorCategory) => void;
 }
 
@@ -18,13 +17,13 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ categories, 
   const translateX = useRef(new Animated.Value(0)).current;
   const [setWidth, setSetWidth] = useState(0);
 
-  // Built from whatever categories the API returns — a category added or renamed
-  // server-side shows up here automatically, falling back to a neutral bottle photo
-  // until someone sources a curated shot for it in BOTTLE_IMAGES.
+  // The real, admin-curated photo the backend serves per category (the same one
+  // shown on the website) — no stock-photo fallback. A category the admin hasn't
+  // set a photo for yet just renders its initial instead of a fake substitute.
   const showcaseItems = categories.map((cat) => ({
     id: cat.name,
     label: cat.name,
-    image: BOTTLE_IMAGES[cat.name] || DEFAULT_BOTTLE_IMAGE
+    image: cat.image || null
   }));
 
   useEffect(() => {
@@ -56,7 +55,13 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ categories, 
           onPress={() => onSelectCategory(item.id)}
         >
           <View style={styles.imageWrap}>
-            <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+            {item.image ? (
+              <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <Text style={styles.imagePlaceholderText}>{item.label.charAt(0)}</Text>
+              </View>
+            )}
           </View>
           <Text style={styles.label}>{item.label}</Text>
         </TouchableOpacity>
@@ -143,6 +148,17 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 5,
     elevation: 2,
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imagePlaceholderText: {
+    color: colors.primary,
+    fontSize: 32,
+    fontWeight: '800',
   },
   image: {
     width: '100%',

@@ -28,6 +28,7 @@ export interface CategoryItem {
   name: string;
   icon: string;
   productCount: number;
+  image?: string | null;
 }
 
 export interface Promotion {
