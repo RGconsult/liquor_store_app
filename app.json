@@ -30,7 +30,11 @@
           "resizeMode": "contain",
           "backgroundColor": "#080706"
         }
-      ]
+      ],
+      "expo-asset",
+      "expo-font",
+      "expo-router",
+      "expo-status-bar"
     ],
     "extra": {
       "eas": {
