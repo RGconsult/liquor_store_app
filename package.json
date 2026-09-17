@@ -29,7 +29,8 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
-    "react-native-web": "^0.21.0"
+    "react-native-web": "^0.21.0",
+    "react-refresh": "^0.19.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -44,7 +45,9 @@
       }
     },
     "install": {
-      "exclude": ["expo-dev-client"]
+      "exclude": [
+        "expo-dev-client"
+      ]
     }
   }
 }
