@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Linking } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import { PRIVACY_POLICY_URL } from '../config';
 import { User } from 'lucide-react-native';
 import { ColorPalette } from '../theme';
 import { useTheme } from '../context/ThemeContext';
@@ -176,6 +177,10 @@ export const AuthGateScreen: React.FC = () => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)} style={{ marginTop: 20, alignItems: 'center' }}>
+        <Text style={styles.privacyLink}>Privacy Policy</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -295,5 +300,11 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
     fontWeight: '700',
+  },
+  privacyLink: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

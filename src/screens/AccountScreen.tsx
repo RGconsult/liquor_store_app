@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet, Linking } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { fetchOrders, fetchLoyaltySettings, LoyaltySettings } from '../services/api';
+import { PRIVACY_POLICY_URL } from '../config';
 import { Order, Product } from '../types';
-import { Heart, LogOut, Clock, Package, Sun, Moon, Smartphone, MapPin } from 'lucide-react-native';
+import { Heart, LogOut, Clock, Package, Sun, Moon, Smartphone, MapPin, ShieldCheck, ExternalLink } from 'lucide-react-native';
 import { useWishlist } from '../context/WishlistContext';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles, ThemeMode } from '../context/ThemeContext';
@@ -190,6 +191,21 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
         })}
       </View>
 
+      {/* Legal Section */}
+      <View style={styles.sectionTitleRow}>
+        <ShieldCheck size={18} color={colors.primary} style={{ marginRight: 8 }} />
+        <Text style={styles.sectionTitle}>LEGAL</Text>
+      </View>
+
+      <TouchableOpacity
+        onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+        style={styles.linkRow}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.linkRowText}>Privacy Policy</Text>
+        <ExternalLink size={16} color={colors.primary} />
+      </TouchableOpacity>
+
       <OrderTrackingModal order={trackingOrder} onClose={() => setTrackingOrder(null)} />
     </ScrollView>
   );
@@ -273,6 +289,22 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.8,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  linkRowText: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700',
   },
   emptyBox: {
     backgroundColor: colors.card,
