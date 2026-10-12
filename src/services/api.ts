@@ -60,16 +60,15 @@ export async function fetchProducts(params?: { category?: string; search?: strin
   // exist — the catalog is well past that (295+ products), so a single
   // request was silently truncating the list. Walk every page so category
   // counts and "browse everything" actually match what's in the database.
+  // The remaining pages are fetched in parallel — one after another, each page's
+  // server round trip added up to several seconds of startup spinner.
   const first = await apiFetch(`/products?${buildQuery(1)}`);
-  let allProducts = (first.products as Product[]) ?? [];
   const totalPages = first.pagination?.totalPages ?? 1;
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) => apiFetch(`/products?${buildQuery(i + 2)}`))
+  );
 
-  for (let page = 2; page <= totalPages; page++) {
-    const data = await apiFetch(`/products?${buildQuery(page)}`);
-    allProducts = allProducts.concat((data.products as Product[]) ?? []);
-  }
-
-  return allProducts;
+  return [first, ...rest].flatMap((data) => (data.products as Product[]) ?? []);
 }
 
 export async function fetchProduct(id: string): Promise<{ product: Product; relatedProducts: Product[] }> {

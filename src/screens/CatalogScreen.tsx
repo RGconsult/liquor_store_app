@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, FlatList, StyleSheet } from 'react-native';
 import { Product, LiquorCategory } from '../types';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { ProductCard } from '../components/ProductCard';
@@ -76,8 +76,10 @@ export const CatalogScreen: React.FC<CatalogScreenProps> = ({
       ? 'Browse premium spirits, champagnes, and fine wines.'
       : `Browse best ${categoryPlural}`;
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+  // Passed to the FlatList as an element (not a component type) so it isn't
+  // remounted on every keystroke — that would drop the search box's focus.
+  const listHeader = (
+    <>
       <View style={styles.header}>
         <Text style={styles.title}>{headerTitle}</Text>
         <Text style={styles.subtitle}>{headerSubtitle}</Text>
@@ -132,8 +134,27 @@ export const CatalogScreen: React.FC<CatalogScreenProps> = ({
         </TouchableOpacity>
       </ScrollView>
 
-      {/* 1 Card Per Row Product List */}
-      {filtered.length === 0 ? (
+    </>
+  );
+
+  // FlatList only renders the cards near the screen. The full catalog (230+
+  // bottles, each with a photo) rendered at once made this screen slow to open
+  // and scroll.
+  return (
+    <FlatList
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      data={filtered}
+      keyExtractor={(product) => product.id}
+      renderItem={({ item }) => (
+        <View style={styles.listContainer}>
+          <ProductCard product={item} onQuickView={onQuickView} />
+        </View>
+      )}
+      ListHeaderComponent={listHeader}
+      ListEmptyComponent={
         <View style={styles.emptyCard}>
           <Sparkles size={36} color={colors.primary} style={{ marginBottom: 10 }} />
           <Text style={styles.emptyTitle}>No matching bottles found</Text>
@@ -148,14 +169,12 @@ export const CatalogScreen: React.FC<CatalogScreenProps> = ({
             <Text style={styles.resetBtnText}>Clear Filters</Text>
           </TouchableOpacity>
         </View>
-      ) : (
-        <View style={styles.listContainer}>
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} onQuickView={onQuickView} />
-          ))}
-        </View>
-      )}
-    </ScrollView>
+      }
+      initialNumToRender={6}
+      maxToRenderPerBatch={6}
+      windowSize={7}
+      removeClippedSubviews
+    />
   );
 };
 

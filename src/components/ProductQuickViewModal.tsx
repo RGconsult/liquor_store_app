@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, Alert } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert } from 'react-native';
+// expo-image caches to disk, so product photos show instantly after the first load.
+import { Image } from 'expo-image';
 import { Product } from '../types';
 import { X, Heart, ShoppingBag, MapPin, Check } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
@@ -51,7 +53,7 @@ export const ProductQuickViewModal: React.FC<ProductQuickViewModalProps> = ({ pr
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.imageBox}>
-              <Image source={{ uri: product.image }} style={styles.image} resizeMode="contain" />
+              <Image source={{ uri: product.image }} style={styles.image} contentFit="contain" />
 
               {Boolean(product.badge) && (
                 <View style={styles.badge}>

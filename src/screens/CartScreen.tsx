@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+// expo-image caches to disk, so product photos show instantly after the first load.
+import { Image } from 'expo-image';
 import { useCart } from '../context/CartContext';
 import { ShoppingBag, Trash2, ArrowRight, PlusCircle } from 'lucide-react-native';
 import { ColorPalette } from '../theme';
@@ -47,7 +49,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ onNavigateCheckout, onNa
         {cart.map((item) => (
           <View key={item.product.id} style={styles.cartItemCard}>
             <View style={styles.itemImageContainer}>
-              <Image source={{ uri: item.product.image }} style={styles.itemImage} resizeMode="contain" />
+              <Image source={{ uri: item.product.image }} style={styles.itemImage} contentFit="contain" />
             </View>
 
             <View style={styles.itemInfo}>

@@ -3,7 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, KeyboardAv
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { RefreshCw } from 'lucide-react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import { hydrateStorage, getItem } from './services/storage';
+import { hydrateStorage, getItem, getItemAsync, setItem } from './services/storage';
+
+const STOREFRONT_CACHE_KEY = 'rv_storefront_cache';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider, useCart } from './context/CartContext';
@@ -58,14 +60,34 @@ export const MainApp: React.FC = () => {
   }, []);
 
   const loadStorefront = useCallback(async () => {
-    setIsLoading(true);
     setLoadError('');
+
+    // Show the catalog saved from the last visit straight away, then refresh it
+    // from the server in the background — no spinner on every launch.
+    let hasCache = false;
+    try {
+      const cached = await getItemAsync(STOREFRONT_CACHE_KEY);
+      if (cached) {
+        const { products: cachedProducts, categories: cachedCategories } = JSON.parse(cached);
+        if (Array.isArray(cachedProducts) && cachedProducts.length > 0) {
+          setProducts(cachedProducts);
+          setCategories(cachedCategories ?? []);
+          hasCache = true;
+        }
+      }
+    } catch {
+      // A corrupt cache just means a normal network load.
+    }
+    setIsLoading(!hasCache);
+
     try {
       const [productList, categoryList] = await Promise.all([fetchProducts(), fetchCategories()]);
       setProducts(productList);
       setCategories(categoryList);
+      setItem(STOREFRONT_CACHE_KEY, JSON.stringify({ products: productList, categories: categoryList })).catch(() => {});
     } catch (e: any) {
-      setLoadError(e?.message || 'Could not reach the store. Check your connection and try again.');
+      // With a cached catalog on screen, a failed refresh isn't worth an error screen.
+      if (!hasCache) setLoadError(e?.message || 'Could not reach the store. Check your connection and try again.');
     } finally {
       setIsLoading(false);
     }

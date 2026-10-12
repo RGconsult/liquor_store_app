@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
+// expo-image caches to disk, so product photos show instantly after the first load.
+import { Image } from 'expo-image';
 import { LiquorCategory } from '../types';
 import { ColorPalette } from '../theme';
 import { useThemedStyles } from '../context/ThemeContext';
@@ -56,7 +58,7 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ categories, 
         >
           <View style={styles.imageWrap}>
             {item.image ? (
-              <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+              <Image source={{ uri: item.image }} style={styles.image} contentFit="cover" />
             ) : (
               <View style={styles.imagePlaceholder}>
                 <Text style={styles.imagePlaceholderText}>{item.label.charAt(0)}</Text>

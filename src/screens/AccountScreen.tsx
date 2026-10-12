@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Linking } from 'react-native';
+// expo-image caches to disk, so product photos show instantly after the first load.
+import { Image } from 'expo-image';
 import { useAuth } from '../context/AuthContext';
 import { fetchOrders, fetchLoyaltySettings, LoyaltySettings } from '../services/api';
 import { PRIVACY_POLICY_URL } from '../config';
@@ -159,7 +161,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
         <View style={styles.grid}>
           {wishlistedProducts.map((p) => (
             <TouchableOpacity key={p.id} onPress={() => onQuickView(p)} style={styles.wishlistCard} activeOpacity={0.8}>
-              <Image source={{ uri: p.image }} style={styles.wishlistImg} resizeMode="contain" />
+              <Image source={{ uri: p.image }} style={styles.wishlistImg} contentFit="contain" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.wishlistTitle} numberOfLines={1}>{p.name}</Text>
                 <Text style={styles.wishlistPrice}>{formatRwf(p.priceUsd)}</Text>
