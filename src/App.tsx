@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { RefreshCw } from 'lucide-react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
@@ -44,6 +44,18 @@ export const MainApp: React.FC = () => {
   const [catalogInitialCategory, setCatalogInitialCategory] = useState<LiquorCategory | undefined>(undefined);
   const [loadError, setLoadError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  // The tab bar would otherwise ride up on top of the keyboard and eat into
+  // the space left for the form being filled in, so hide it while typing.
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const loadStorefront = useCallback(async () => {
     setIsLoading(true);
@@ -90,7 +102,10 @@ export const MainApp: React.FC = () => {
     setActiveTab('catalog');
   };
 
+  // Android draws edge-to-edge, so the window no longer shrinks when the keyboard
+  // opens — without this wrapper the keyboard covers the lower form fields.
   return (
+    <KeyboardAvoidingView style={styles.safeArea} behavior="padding">
     <SafeAreaView style={styles.safeArea}>
       <ExpoStatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
       <View style={styles.container}>
@@ -178,9 +193,10 @@ export const MainApp: React.FC = () => {
         />
 
         {/* Mobile Navigation Tab Bar */}
-        <BottomNavigation activeTab={activeTab} setActiveTab={goToTab} />
+        {!keyboardVisible && <BottomNavigation activeTab={activeTab} setActiveTab={goToTab} />}
       </View>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 

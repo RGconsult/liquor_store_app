@@ -2,7 +2,7 @@
   "expo": {
     "name": "Wine & Liquor Joint",
     "slug": "wine-and-liquor-joint",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#080706",
@@ -15,7 +15,7 @@
       "package": "rw.winejoint.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0d2b26"
+        "backgroundColor": "#1b5f54"
       }
     },
     "web": {
@@ -26,9 +26,9 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "imageWidth": 200,
+          "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#080706"
+          "backgroundColor": "#1b5f54"
         }
       ],
       "expo-asset",

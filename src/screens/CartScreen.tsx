@@ -91,7 +91,7 @@ export const CartScreen: React.FC<CartScreenProps> = ({ onNavigateCheckout, onNa
         </View>
 
         <Text style={styles.deliveryNote}>
-          Delivery fee, tax, and any loyalty rewards are calculated at checkout.
+          Delivery fee and any loyalty rewards are calculated at checkout.
         </Text>
       </View>
 

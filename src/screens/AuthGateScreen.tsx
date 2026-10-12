@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Linking } from 'react-native';
+import React, { useState, useMemo, useRef } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Linking, KeyboardAvoidingView } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { PRIVACY_POLICY_URL } from '../config';
-import { User } from 'lucide-react-native';
+import { User, Eye, EyeOff } from 'lucide-react-native';
 import { ColorPalette } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -23,6 +23,14 @@ export const AuthGateScreen: React.FC = () => {
   const [dobYear, setDobYear] = useState('');
   const [authError, setAuthError] = useState('');
   const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // "Next" on the keyboard moves to the following field (scrolling it into
+  // view) instead of leaving the user typing into a field they can't see.
+  const dobMonthRef = useRef<TextInput>(null);
+  const dobYearRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   const validateDob = (): { iso: string } | { error: string } => {
     const day = parseInt(dobDay, 10);
@@ -70,7 +78,13 @@ export const AuthGateScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.authContainer} showsVerticalScrollIndicator={false}>
+    <KeyboardAvoidingView style={styles.container} behavior="padding">
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.authContainer}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.authHeader}>
         <View style={styles.userIconBox}>
           <User size={36} color={colors.primary} />
@@ -95,6 +109,9 @@ export const AuthGateScreen: React.FC = () => {
               onChangeText={setName}
               placeholder="Enter your full name"
               placeholderTextColor={colors.textMuted}
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => dobMonthRef.current?.focus()}
               style={styles.input}
             />
           </View>
@@ -106,7 +123,11 @@ export const AuthGateScreen: React.FC = () => {
             <View style={styles.dobRow}>
               <TextInput
                 value={dobDay}
-                onChangeText={(t) => setDobDay(t.replace(/[^0-9]/g, '').slice(0, 2))}
+                onChangeText={(t) => {
+                  const v = t.replace(/[^0-9]/g, '').slice(0, 2);
+                  setDobDay(v);
+                  if (v.length === 2) dobMonthRef.current?.focus();
+                }}
                 placeholder="DD"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="number-pad"
@@ -114,8 +135,13 @@ export const AuthGateScreen: React.FC = () => {
                 style={[styles.input, styles.dobInput]}
               />
               <TextInput
+                ref={dobMonthRef}
                 value={dobMonth}
-                onChangeText={(t) => setDobMonth(t.replace(/[^0-9]/g, '').slice(0, 2))}
+                onChangeText={(t) => {
+                  const v = t.replace(/[^0-9]/g, '').slice(0, 2);
+                  setDobMonth(v);
+                  if (v.length === 2) dobYearRef.current?.focus();
+                }}
                 placeholder="MM"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="number-pad"
@@ -123,8 +149,13 @@ export const AuthGateScreen: React.FC = () => {
                 style={[styles.input, styles.dobInput]}
               />
               <TextInput
+                ref={dobYearRef}
                 value={dobYear}
-                onChangeText={(t) => setDobYear(t.replace(/[^0-9]/g, '').slice(0, 4))}
+                onChangeText={(t) => {
+                  const v = t.replace(/[^0-9]/g, '').slice(0, 4);
+                  setDobYear(v);
+                  if (v.length === 4) emailRef.current?.focus();
+                }}
                 placeholder="YYYY"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="number-pad"
@@ -139,26 +170,48 @@ export const AuthGateScreen: React.FC = () => {
         <View style={styles.field}>
           <Text style={styles.label}>Email Address</Text>
           <TextInput
+            ref={emailRef}
             value={email}
             onChangeText={setEmail}
             placeholder="name@domain.com"
             placeholderTextColor={colors.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoComplete="email"
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => passwordRef.current?.focus()}
             style={styles.input}
           />
         </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Password</Text>
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••••"
-            placeholderTextColor={colors.textMuted}
-            secureTextEntry
-            style={styles.input}
-          />
+          <View style={styles.passwordWrap}>
+            <TextInput
+              ref={passwordRef}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              placeholderTextColor={colors.textMuted}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete={isLoginMode ? 'current-password' : 'new-password'}
+              returnKeyType="go"
+              onSubmitEditing={handleAuth}
+              style={[styles.input, styles.passwordInput]}
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword((v) => !v)}
+              style={styles.eyeBtn}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              hitSlop={8}
+            >
+              {showPassword ? <EyeOff size={20} color={colors.textMuted} /> : <Eye size={20} color={colors.textMuted} />}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {Boolean(authError) && <Text style={styles.errorText}>{authError}</Text>}
@@ -182,6 +235,7 @@ export const AuthGateScreen: React.FC = () => {
         <Text style={styles.privacyLink}>Privacy Policy</Text>
       </TouchableOpacity>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -257,6 +311,20 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     fontWeight: '600',
     paddingHorizontal: 16,
     height: 52,
+  },
+  passwordWrap: {
+    justifyContent: 'center',
+  },
+  passwordInput: {
+    paddingRight: 52,
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 6,
+    height: 44,
+    width: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dobRow: {
     flexDirection: 'row',

@@ -96,10 +96,9 @@ export interface DeliveryDetails {
 export interface Order {
   id: string;
   userId: string;
-  status: 'ORDER_PLACED' | 'PREPARING' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
+  status: 'PENDING' | 'ORDER_PLACED' | 'PREPARING' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
   subtotalUsd: number;
   shippingUsd: number;
-  taxesUsd: number;
   totalUsd: number;
   paymentMethod: 'card' | 'mobile';
   deliveryDetails: DeliveryDetails;

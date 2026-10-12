@@ -1,10 +1,11 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Order } from '../types';
-import { X, PackageCheck, ChefHat, Truck, PartyPopper } from 'lucide-react-native';
+import { X, Hourglass, PackageCheck, ChefHat, Truck, PartyPopper } from 'lucide-react-native';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles } from '../context/ThemeContext';
 import { formatRwf } from '../utils/currency';
+import { momoPayCode } from '../utils/payment';
 
 interface OrderTrackingModalProps {
   order: Order | null;
@@ -12,7 +13,8 @@ interface OrderTrackingModalProps {
 }
 
 const STEPS: { status: Order['status']; label: string; description: string; icon: React.ComponentType<any> }[] = [
-  { status: 'ORDER_PLACED', label: 'Order Placed', description: 'We’ve received your order and it’s confirmed.', icon: PackageCheck },
+  { status: 'PENDING', label: 'Awaiting Payment', description: 'We’ve received your order. It’s confirmed once our team sees your payment.', icon: Hourglass },
+  { status: 'ORDER_PLACED', label: 'Order Placed', description: 'Payment received — your order is confirmed.', icon: PackageCheck },
   { status: 'PREPARING', label: 'Preparing for Dispatch', description: 'Your bottles are being packed at the cellar.', icon: ChefHat },
   { status: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', description: 'On its way to you across Kigali.', icon: Truck },
   { status: 'DELIVERED', label: 'Delivered', description: 'Enjoy responsibly!', icon: PartyPopper }
@@ -88,10 +90,17 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ order, o
                 </Text>
               ))}
               <View style={styles.summaryFooter}>
-                <Text style={styles.summaryTotalLabel}>Total Paid</Text>
+                <Text style={styles.summaryTotalLabel}>{order.status === 'PENDING' ? 'Total Due' : 'Total Paid'}</Text>
                 <Text style={styles.summaryTotalValue}>{formatRwf(order.totalUsd)}</Text>
               </View>
             </View>
+
+            {order.status === 'PENDING' && order.deliveryDetails?.paymentPlan !== 'PICKUP_PAY' && (
+              <View style={[styles.summaryCard, { marginTop: 12 }]}>
+                <Text style={styles.summaryItem}>You may pay with MoMo by dialing</Text>
+                <Text style={styles.summaryTotalValue} selectable>{momoPayCode(order.totalUsd)}</Text>
+              </View>
+            )}
           </ScrollView>
         </View>
       </View>

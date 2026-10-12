@@ -18,6 +18,7 @@ interface AccountScreenProps {
 }
 
 const STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Awaiting Payment',
   ORDER_PLACED: 'Order Placed',
   PREPARING: 'Preparing for Dispatch',
   OUT_FOR_DELIVERY: 'Out for Delivery',
@@ -127,7 +128,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
               ))}
 
               <View style={styles.orderFooter}>
-                <Text style={styles.orderTotalLabel}>Total Paid:</Text>
+                <Text style={styles.orderTotalLabel}>{ord.status === 'PENDING' ? 'Total Due:' : 'Total Paid:'}</Text>
                 <Text style={styles.orderTotalVal}>{formatRwf(ord.totalUsd)}</Text>
               </View>
 
