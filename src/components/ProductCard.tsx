@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+// expo-image caches to disk, so product photos show instantly after the first load.
+import { Image } from 'expo-image';
 import { Product } from '../types';
 import { Heart, Plus } from 'lucide-react-native';
 import { useCart } from '../context/CartContext';
@@ -38,7 +40,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }
         <Image
           source={{ uri: product.image }}
           style={styles.image}
-          resizeMode="contain"
+          contentFit="contain"
         />
 
         {/* Featured / Special Badge (Teal #1b5e53 from web) */}

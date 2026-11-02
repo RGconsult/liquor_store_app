@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Keyboard } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { RefreshCw } from 'lucide-react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import { hydrateStorage, getItem } from './services/storage';
+import { hydrateStorage, getItem, getItemAsync, setItem } from './services/storage';
+
+const STOREFRONT_CACHE_KEY = 'rv_storefront_cache';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider, useCart } from './context/CartContext';
@@ -44,16 +46,48 @@ export const MainApp: React.FC = () => {
   const [catalogInitialCategory, setCatalogInitialCategory] = useState<LiquorCategory | undefined>(undefined);
   const [loadError, setLoadError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  // The tab bar would otherwise ride up on top of the keyboard and eat into
+  // the space left for the form being filled in, so hide it while typing.
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const loadStorefront = useCallback(async () => {
-    setIsLoading(true);
     setLoadError('');
+
+    // Show the catalog saved from the last visit straight away, then refresh it
+    // from the server in the background — no spinner on every launch.
+    let hasCache = false;
+    try {
+      const cached = await getItemAsync(STOREFRONT_CACHE_KEY);
+      if (cached) {
+        const { products: cachedProducts, categories: cachedCategories } = JSON.parse(cached);
+        if (Array.isArray(cachedProducts) && cachedProducts.length > 0) {
+          setProducts(cachedProducts);
+          setCategories(cachedCategories ?? []);
+          hasCache = true;
+        }
+      }
+    } catch {
+      // A corrupt cache just means a normal network load.
+    }
+    setIsLoading(!hasCache);
+
     try {
       const [productList, categoryList] = await Promise.all([fetchProducts(), fetchCategories()]);
       setProducts(productList);
       setCategories(categoryList);
+      setItem(STOREFRONT_CACHE_KEY, JSON.stringify({ products: productList, categories: categoryList })).catch(() => {});
     } catch (e: any) {
-      setLoadError(e?.message || 'Could not reach the store. Check your connection and try again.');
+      // With a cached catalog on screen, a failed refresh isn't worth an error screen.
+      if (!hasCache) setLoadError(e?.message || 'Could not reach the store. Check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -90,7 +124,10 @@ export const MainApp: React.FC = () => {
     setActiveTab('catalog');
   };
 
+  // Android draws edge-to-edge, so the window no longer shrinks when the keyboard
+  // opens — without this wrapper the keyboard covers the lower form fields.
   return (
+    <KeyboardAvoidingView style={styles.safeArea} behavior="padding">
     <SafeAreaView style={styles.safeArea}>
       <ExpoStatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
       <View style={styles.container}>
@@ -178,9 +215,10 @@ export const MainApp: React.FC = () => {
         />
 
         {/* Mobile Navigation Tab Bar */}
-        <BottomNavigation activeTab={activeTab} setActiveTab={goToTab} />
+        {!keyboardVisible && <BottomNavigation activeTab={activeTab} setActiveTab={goToTab} />}
       </View>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Linking } from 'react-native';
+// expo-image caches to disk, so product photos show instantly after the first load.
+import { Image } from 'expo-image';
 import { useAuth } from '../context/AuthContext';
 import { fetchOrders, fetchLoyaltySettings, LoyaltySettings } from '../services/api';
+import { PRIVACY_POLICY_URL } from '../config';
 import { Order, Product } from '../types';
-import { Heart, LogOut, Clock, Package, Sun, Moon, Smartphone, MapPin } from 'lucide-react-native';
+import { Heart, LogOut, Clock, Package, Sun, Moon, Smartphone, MapPin, ShieldCheck, ExternalLink } from 'lucide-react-native';
 import { useWishlist } from '../context/WishlistContext';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles, ThemeMode } from '../context/ThemeContext';
@@ -17,6 +20,7 @@ interface AccountScreenProps {
 }
 
 const STATUS_LABEL: Record<string, string> = {
+  PENDING: 'Awaiting Payment',
   ORDER_PLACED: 'Order Placed',
   PREPARING: 'Preparing for Dispatch',
   OUT_FOR_DELIVERY: 'Out for Delivery',
@@ -126,7 +130,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
               ))}
 
               <View style={styles.orderFooter}>
-                <Text style={styles.orderTotalLabel}>Total Paid:</Text>
+                <Text style={styles.orderTotalLabel}>{ord.status === 'PENDING' ? 'Total Due:' : 'Total Paid:'}</Text>
                 <Text style={styles.orderTotalVal}>{formatRwf(ord.totalUsd)}</Text>
               </View>
 
@@ -157,7 +161,7 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
         <View style={styles.grid}>
           {wishlistedProducts.map((p) => (
             <TouchableOpacity key={p.id} onPress={() => onQuickView(p)} style={styles.wishlistCard} activeOpacity={0.8}>
-              <Image source={{ uri: p.image }} style={styles.wishlistImg} resizeMode="contain" />
+              <Image source={{ uri: p.image }} style={styles.wishlistImg} contentFit="contain" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.wishlistTitle} numberOfLines={1}>{p.name}</Text>
                 <Text style={styles.wishlistPrice}>{formatRwf(p.priceUsd)}</Text>
@@ -189,6 +193,21 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
           );
         })}
       </View>
+
+      {/* Legal Section */}
+      <View style={styles.sectionTitleRow}>
+        <ShieldCheck size={18} color={colors.primary} style={{ marginRight: 8 }} />
+        <Text style={styles.sectionTitle}>LEGAL</Text>
+      </View>
+
+      <TouchableOpacity
+        onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+        style={styles.linkRow}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.linkRowText}>Privacy Policy</Text>
+        <ExternalLink size={16} color={colors.primary} />
+      </TouchableOpacity>
 
       <OrderTrackingModal order={trackingOrder} onClose={() => setTrackingOrder(null)} />
     </ScrollView>
@@ -273,6 +292,22 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     letterSpacing: 0.8,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  linkRowText: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700',
   },
   emptyBox: {
     backgroundColor: colors.card,

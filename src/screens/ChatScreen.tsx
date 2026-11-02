@@ -5,8 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   StyleSheet
 } from 'react-native';
@@ -46,11 +44,8 @@ export const ChatScreen: React.FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
+    // Keyboard avoidance is handled once for the whole app in MainApp.
+    <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Chat with Us</Text>
         <Text style={styles.subtitle}>Our team usually replies within a few hours.</Text>
@@ -119,7 +114,7 @@ export const ChatScreen: React.FC = () => {
           {isSending ? <ActivityIndicator size="small" color="#ffffff" /> : <Send size={18} color="#ffffff" />}
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 

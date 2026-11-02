@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Linking } from 'react-native';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { submitOrder, ApiError } from '../services/api';
 import { rwfToUsd, formatRwf } from '../utils/currency';
+import { momoPayCode, paymentStatusLabel } from '../utils/payment';
 import { DELIVERY_FEE_RWF } from '../constants/pricing';
 import { Order } from '../types';
-import { CheckCircle2, Smartphone, CreditCard, Store, ShieldCheck } from 'lucide-react-native';
+import { CheckCircle2, Smartphone, Store, ShieldCheck, Phone } from 'lucide-react-native';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles } from '../context/ThemeContext';
 
@@ -15,7 +16,9 @@ interface CheckoutScreenProps {
   onNavigateAccount: () => void;
 }
 
-type PaymentMethodUi = 'momo' | 'card' | 'pickup_counter';
+// Nothing is charged in the app: the customer pays by MoMo USSD (or at the store
+// counter for pickup) and staff confirm the order once they've seen the payment.
+type PaymentMethodUi = 'momo' | 'pickup_counter';
 
 export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, onNavigateAccount }) => {
   const { colors } = useTheme();
@@ -36,9 +39,6 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodUi>('momo');
   const [momoNumber, setMomoNumber] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
 
   const [couponId, setCouponId] = useState('');
   const freeDeliveryCredits = user?.freeDeliveryCredits ?? 0;
@@ -54,8 +54,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
 
   const shippingUsd = isPickup ? 0 : useFreeDelivery && freeDeliveryCredits > 0 ? 0 : rwfToUsd(DELIVERY_FEE_RWF);
   const discountedSubtotal = coupon ? subtotalUsd * (1 - coupon.percentOff / 100) : subtotalUsd;
-  const taxesUsd = Number((discountedSubtotal * 0.0825).toFixed(2));
-  const totalUsd = discountedSubtotal + shippingUsd + taxesUsd;
+  const totalUsd = discountedSubtotal + shippingUsd;
 
   const handleSubmit = async () => {
     setError('');
@@ -76,13 +75,8 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
       setError('Please enter your Mobile Money number.');
       return;
     }
-    if (paymentMethod === 'card' && (!cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim())) {
-      setError('Please fill in all card details.');
-      return;
-    }
 
     setIsSubmitting(true);
-    const cardLast4 = cardNumber ? cardNumber.replace(/\s+/g, '').slice(-4) : undefined;
 
     try {
       const res = await submitOrder({
@@ -97,10 +91,9 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
           province: isPickup ? 'Kigali City' : province,
           deliveryOption: 'now',
           paymentPlan: paymentMethod === 'pickup_counter' ? 'PICKUP_PAY' : 'FULL',
-          momoNumber: paymentMethod === 'momo' ? momoNumber : undefined,
-          cardLast4: paymentMethod === 'card' ? cardLast4 : undefined
+          momoNumber: paymentMethod === 'momo' ? momoNumber : undefined
         },
-        paymentMethod: paymentMethod === 'pickup_counter' ? 'pickup_cash' : paymentMethod === 'momo' ? 'mobile' : 'card',
+        paymentMethod: paymentMethod === 'pickup_counter' ? 'pickup_cash' : 'mobile',
         couponId: couponId || undefined,
         useFreeDelivery: !isPickup && useFreeDelivery
       });
@@ -132,6 +125,8 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
   if (completedOrder) {
     const details = completedOrder.deliveryDetails;
     const isPickupPay = details.paymentPlan === 'PICKUP_PAY';
+    const isPending = completedOrder.status === 'PENDING';
+    const payCode = momoPayCode(completedOrder.totalUsd);
 
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.successContainer} showsVerticalScrollIndicator={false}>
@@ -140,7 +135,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
         </View>
 
         <View style={styles.confirmedBadge}>
-          <Text style={styles.confirmedBadgeText}>ORDER CONFIRMED</Text>
+          <Text style={styles.confirmedBadgeText}>{isPending ? 'ORDER RECEIVED' : 'ORDER CONFIRMED'}</Text>
         </View>
 
         <Text style={styles.successTitle}>Thank You For Your Order!</Text>
@@ -173,8 +168,8 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
           )}
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Payment Status:</Text>
-            <Text style={[styles.summaryVal, { color: colors.primary }]}>
-              {isPickupPay ? 'Pay on Collection at Boutique' : 'Paid in Full'}
+            <Text style={[styles.summaryVal, { color: isPending && !isPickupPay ? colors.danger : colors.primary }]}>
+              {paymentStatusLabel(completedOrder.status, details.paymentPlan)}
             </Text>
           </View>
           <View style={[styles.summaryRow, { borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: 10, marginTop: 6 }]}>
@@ -182,6 +177,22 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
             <Text style={[styles.summaryVal, { fontWeight: 'bold', fontSize: 16 }]}>{formatRwf(completedOrder.totalUsd)}</Text>
           </View>
         </View>
+
+        {isPending && !isPickupPay && (
+          <View style={styles.payCodeBox}>
+            <Text style={styles.payCodeLabel}>You may pay {formatRwf(completedOrder.totalUsd)} with MoMo by dialing:</Text>
+            <Text style={styles.payCode} selectable>{payCode}</Text>
+            <TouchableOpacity
+              onPress={() => Linking.openURL(`tel:${encodeURIComponent(payCode)}`).catch(() => {})}
+              style={styles.dialBtn}
+              activeOpacity={0.85}
+            >
+              <Phone size={16} color="#ffffff" style={{ marginRight: 8 }} />
+              <Text style={styles.primaryBtnText}>Dial to Pay</Text>
+            </TouchableOpacity>
+            <Text style={styles.payCodeHint}>Your order is confirmed as soon as our team sees your payment.</Text>
+          </View>
+        )}
 
         <TouchableOpacity onPress={onNavigateAccount} style={styles.primaryBtn} activeOpacity={0.85}>
           <Text style={styles.primaryBtnText}>Track Order Status</Text>
@@ -203,7 +214,12 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.header}>
         <Text style={styles.title}>Checkout</Text>
         <Text style={styles.subtitle}>Complete your order & choose payment options</Text>
@@ -340,13 +356,6 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
             <Smartphone size={20} color={paymentMethod === 'momo' ? colors.primary : colors.textMuted} />
             <Text style={styles.payOptionLabel}>Mobile Money</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setPaymentMethod('card')}
-            style={[styles.payOption, paymentMethod === 'card' && styles.payOptionActive]}
-          >
-            <CreditCard size={20} color={paymentMethod === 'card' ? colors.primary : colors.textMuted} />
-            <Text style={styles.payOptionLabel}>Card</Text>
-          </TouchableOpacity>
           {isPickup && (
             <TouchableOpacity
               onPress={() => setPaymentMethod('pickup_counter')}
@@ -368,7 +377,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
 
         {paymentMethod === 'momo' && (
           <View style={styles.payDetailBox}>
-            <Text style={styles.label}>Mobile Money Number</Text>
+            <Text style={styles.label}>MoMo Number You'll Pay From</Text>
             <TextInput
               value={momoNumber}
               onChangeText={setMomoNumber}
@@ -377,48 +386,12 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
               keyboardType="phone-pad"
               style={styles.input}
             />
-            <Text style={styles.payDetailHint}>You'll get a payment prompt on this number for {formatRwf(totalUsd)}.</Text>
+            <Text style={styles.payDetailHint}>
+              After placing your order, pay {formatRwf(totalUsd)} by dialing {momoPayCode(totalUsd)}. We confirm your order once we see the payment.
+            </Text>
           </View>
         )}
 
-        {paymentMethod === 'card' && (
-          <View style={styles.payDetailBox}>
-            <Text style={styles.label}>Card Number</Text>
-            <TextInput
-              value={cardNumber}
-              onChangeText={setCardNumber}
-              placeholder="4532 •••• •••• 8892"
-              placeholderTextColor={colors.textMuted}
-              maxLength={19}
-              style={styles.input}
-            />
-            <View style={styles.cardRow}>
-              <View style={[styles.field, { flex: 1, marginBottom: 0 }]}>
-                <Text style={styles.label}>Expiry</Text>
-                <TextInput
-                  value={cardExpiry}
-                  onChangeText={setCardExpiry}
-                  placeholder="MM/YY"
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={5}
-                  style={styles.input}
-                />
-              </View>
-              <View style={[styles.field, { flex: 1, marginBottom: 0 }]}>
-                <Text style={styles.label}>CVV</Text>
-                <TextInput
-                  value={cardCvv}
-                  onChangeText={setCardCvv}
-                  placeholder="123"
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={4}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
-            </View>
-          </View>
-        )}
       </View>
 
       {/* Rewards & Coupons */}
@@ -482,10 +455,6 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
           <Text style={styles.totalPayableLineLabel}>Delivery</Text>
           <Text style={styles.totalPayableLineVal}>{isPickup ? 'Free (pick-up)' : shippingUsd === 0 ? 'Free' : formatRwf(shippingUsd)}</Text>
         </View>
-        <View style={styles.totalPayableRow}>
-          <Text style={styles.totalPayableLineLabel}>Tax (8.25%)</Text>
-          <Text style={styles.totalPayableLineVal}>{formatRwf(taxesUsd)}</Text>
-        </View>
         <View style={[styles.totalPayableRow, styles.totalPayableFinalRow]}>
           <Text style={styles.totalPayableLabel}>TOTAL</Text>
           <Text style={styles.totalPayableRwf}>{formatRwf(totalUsd)}</Text>
@@ -511,7 +480,7 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
           </View>
         ) : (
           <Text style={styles.submitBtnText}>
-            {paymentMethod === 'pickup_counter' ? `Confirm — Pay at Store (${formatRwf(totalUsd)})` : `Confirm & Pay (${formatRwf(totalUsd)})`}
+            {paymentMethod === 'pickup_counter' ? `Confirm — Pay at Store (${formatRwf(totalUsd)})` : `Place Order (${formatRwf(totalUsd)})`}
           </Text>
         )}
       </TouchableOpacity>
@@ -611,7 +580,6 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
   },
   payDetailText: { color: colors.text, fontSize: 13, lineHeight: 19 },
   payDetailHint: { color: colors.textMuted, fontSize: 11, marginTop: 6 },
-  cardRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
   couponRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   couponChip: {
     paddingVertical: 8,
@@ -734,5 +702,27 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder
   },
-  secondaryBtnText: { color: colors.textSecondary, fontSize: 14, fontWeight: '700' }
+  secondaryBtnText: { color: colors.textSecondary, fontSize: 14, fontWeight: '700' },
+  payCodeBox: {
+    width: '100%',
+    backgroundColor: colors.primaryContainer,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center'
+  },
+  payCodeLabel: { color: colors.text, fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  payCode: { color: colors.primary, fontSize: 18, fontWeight: 'bold', marginVertical: 10, letterSpacing: 0.5 },
+  payCodeHint: { color: colors.textMuted, fontSize: 12, textAlign: 'center', marginTop: 10 },
+  dialBtn: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    height: 44,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
 });
