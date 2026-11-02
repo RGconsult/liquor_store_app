@@ -12,10 +12,19 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "info.rgconsultinc@gmail.com",
+        "ascAppId": "6829676712",
+        "appleTeamId": "MBAD5M685A"
+      }
+    }
   }
 }

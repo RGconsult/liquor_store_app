@@ -9,7 +9,10 @@
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "rw.wineandliquorjoint.app"
+      "bundleIdentifier": "rw.wineandliquorjoint.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "rw.wineandliquorjoint.app",
