@@ -81,7 +81,18 @@ export const MainApp: React.FC = () => {
     setIsLoading(!hasCache);
 
     try {
-      const [productList, categoryList] = await Promise.all([fetchProducts(), fetchCategories()]);
+      const [productList, categoryList] = await Promise.all([
+        fetchProducts(undefined, (firstPage) => {
+          // Show the first 100 products as soon as they arrive — remaining pages
+          // load silently in the background. Only needed on a cache miss; with a
+          // cache the screen is already populated.
+          if (!hasCache) {
+            setProducts(firstPage);
+            setIsLoading(false);
+          }
+        }),
+        fetchCategories(),
+      ]);
       setProducts(productList);
       setCategories(categoryList);
       setItem(STOREFRONT_CACHE_KEY, JSON.stringify({ products: productList, categories: categoryList })).catch(() => {});

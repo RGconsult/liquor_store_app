@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Sparkles, Truck, ChevronRight } from 'lucide-react-native';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles } from '../context/ThemeContext';
@@ -78,12 +79,14 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onSelectCategory }) 
 
   return (
     <View style={styles.cardContainer}>
-      <ImageBackground
-        source={{ uri: active.bgImage }}
-        style={styles.bgImage}
-        imageStyle={styles.imageStyle}
-        resizeMode="cover"
-      >
+      <View style={styles.bgImage}>
+        {/* expo-image caches to disk so banner photos load instantly after first use */}
+        <Image
+          source={{ uri: active.bgImage }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          cachePolicy="disk"
+        />
         <View style={styles.overlay}>
           {/* Top Tag & Indicator */}
           <View style={styles.topRow}>
@@ -126,7 +129,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({ onSelectCategory }) 
             ))}
           </View>
         </View>
-      </ImageBackground>
+      </View>
     </View>
   );
 };
@@ -149,9 +152,6 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
   bgImage: {
     width: '100%',
     minHeight: 210,
-  },
-  imageStyle: {
-    borderRadius: 22,
   },
   overlay: {
     flex: 1,

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
 import { Product, LiquorCategory } from '../types';
 import { HeroCarousel } from '../components/HeroCarousel';
 import { CategoryShowcase } from '../components/CategoryShowcase';
@@ -38,12 +38,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   };
 
-  // Home lists the full catalog inline rather than a curated preview — Catalog (via
-  // "View All") stays useful for its search/sort/price-tier tools on top of this list.
-  const allProductsList = products;
-
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+  // The header elements are memoized so FlatList doesn't remount them on every
+  // render (which would reset the search field's cursor position).
+  const listHeader = useMemo(() => (
+    <>
       {/* Search Input Bar */}
       <View style={styles.searchBar}>
         <Search size={20} color={colors.primary} style={styles.searchIcon} />
@@ -85,14 +83,33 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <Text style={styles.viewAllText}>View All</Text>
         </TouchableOpacity>
       </View>
+    </>
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [searchQuery, colors, categories, products.length]);
 
-      {/* Product List - Single Column (1 card per row) */}
-      <View style={styles.listContainer}>
-        {allProductsList.map((product) => (
-          <ProductCard key={product.id} product={product} onQuickView={onQuickView} />
-        ))}
-      </View>
-    </ScrollView>
+  // FlatList only renders the cards currently near the screen — the full catalog
+  // (295+ bottles, each with a 260px image) in a plain ScrollView was keeping
+  // every node in memory simultaneously, exhausting Android's memory budget and
+  // causing OOM kills (the "app closing itself" crashes testers reported).
+  return (
+    <FlatList
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      data={products}
+      keyExtractor={(product) => product.id}
+      renderItem={({ item }) => (
+        <View style={styles.listContainer}>
+          <ProductCard product={item} onQuickView={onQuickView} />
+        </View>
+      )}
+      ListHeaderComponent={listHeader}
+      initialNumToRender={6}
+      maxToRenderPerBatch={6}
+      windowSize={7}
+      removeClippedSubviews
+    />
   );
 };
 

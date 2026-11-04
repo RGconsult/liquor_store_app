@@ -4,7 +4,7 @@ import { ChatMessage } from '../types';
 import { useAuth } from './AuthContext';
 import { fetchChatMessages, sendChatMessage, fetchChatUnreadCount } from '../services/api';
 
-const UNREAD_POLL_MS = 15000;
+const UNREAD_POLL_MS = 60000;
 
 interface ChatContextType {
   messages: ChatMessage[];

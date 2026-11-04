@@ -15,7 +15,7 @@ interface ProductCardProps {
   onQuickView: (product: Product) => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }) => {
+export const ProductCard = React.memo<ProductCardProps>(({ product, onQuickView }) => {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { addToCart } = useCart();
@@ -87,7 +87,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickView }
       </View>
     </TouchableOpacity>
   );
-};
+});
 
 const createStyles = (colors: ColorPalette) => StyleSheet.create({
   card: {

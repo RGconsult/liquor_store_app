@@ -45,7 +45,10 @@ async function apiFetch(path: string, options: RequestInit = {}, timeoutMs: numb
   return data;
 }
 
-export async function fetchProducts(params?: { category?: string; search?: string; sort?: string }): Promise<Product[]> {
+export async function fetchProducts(
+  params?: { category?: string; search?: string; sort?: string },
+  onFirstPage?: (products: Product[]) => void
+): Promise<Product[]> {
   const buildQuery = (page: number) => {
     const query = new URLSearchParams();
     if (params?.category && params.category !== 'ALL') query.set('category', params.category);
@@ -56,13 +59,13 @@ export async function fetchProducts(params?: { category?: string; search?: strin
     return query.toString();
   };
 
-  // The backend caps each response at 100 products and reports how many pages
-  // exist — the catalog is well past that (295+ products), so a single
-  // request was silently truncating the list. Walk every page so category
-  // counts and "browse everything" actually match what's in the database.
-  // The remaining pages are fetched in parallel — one after another, each page's
-  // server round trip added up to several seconds of startup spinner.
   const first = await apiFetch(`/products?${buildQuery(1)}`);
+  const firstProducts = (first.products as Product[]) ?? [];
+
+  // Notify the caller with page 1 immediately so the UI can become interactive
+  // while the remaining pages (which are fetched in parallel below) are still loading.
+  onFirstPage?.(firstProducts);
+
   const totalPages = first.pagination?.totalPages ?? 1;
   const rest = await Promise.all(
     Array.from({ length: Math.max(0, totalPages - 1) }, (_, i) => apiFetch(`/products?${buildQuery(i + 2)}`))
