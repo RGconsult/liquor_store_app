@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, StyleSheet, Linking, Alert } from 'react-native';
 // expo-image caches to disk, so product photos show instantly after the first load.
 import { Image } from 'expo-image';
 import { useAuth } from '../context/AuthContext';
 import { fetchOrders, fetchLoyaltySettings, LoyaltySettings } from '../services/api';
 import { PRIVACY_POLICY_URL } from '../config';
 import { Order, Product } from '../types';
-import { Heart, LogOut, Clock, Package, Sun, Moon, Smartphone, MapPin, ShieldCheck, ExternalLink } from 'lucide-react-native';
+import { Heart, LogOut, Clock, Package, Sun, Moon, Smartphone, MapPin, ShieldCheck, ExternalLink, Trash2 } from 'lucide-react-native';
 import { useWishlist } from '../context/WishlistContext';
 import { ColorPalette } from '../theme';
 import { useTheme, useThemedStyles, ThemeMode } from '../context/ThemeContext';
@@ -30,7 +30,7 @@ const STATUS_LABEL: Record<string, string> = {
 // The auth gate at the app root guarantees a signed-in user by the time this
 // screen ever mounts — no logged-out state to render here.
 export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickView }) => {
-  const { user, coupons, logout } = useAuth();
+  const { user, coupons, logout, deleteAccount } = useAuth();
   const { wishlistIds } = useWishlist();
   const { colors, mode, setMode } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -40,6 +40,31 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
   const [ordersError, setOrdersError] = useState('');
   const [trackingOrder, setTrackingOrder] = useState<Order | null>(null);
   const [loyaltySettings, setLoyaltySettings] = useState<LoyaltySettings | null>(null);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account and all associated data? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeletingAccount(true);
+            try {
+              await deleteAccount();
+            } catch (err) {
+              Alert.alert('Error', 'Unable to complete deletion request. Please try again.');
+            } finally {
+              setIsDeletingAccount(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -194,10 +219,10 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
         })}
       </View>
 
-      {/* Legal Section */}
+      {/* Legal & Account Section */}
       <View style={styles.sectionTitleRow}>
         <ShieldCheck size={18} color={colors.primary} style={{ marginRight: 8 }} />
-        <Text style={styles.sectionTitle}>LEGAL</Text>
+        <Text style={styles.sectionTitle}>LEGAL & ACCOUNT</Text>
       </View>
 
       <TouchableOpacity
@@ -207,6 +232,25 @@ export const AccountScreen: React.FC<AccountScreenProps> = ({ products, onQuickV
       >
         <Text style={styles.linkRowText}>Privacy Policy</Text>
         <ExternalLink size={16} color={colors.primary} />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={confirmDeleteAccount}
+        style={styles.deleteAccountRow}
+        activeOpacity={0.85}
+        disabled={isDeletingAccount}
+      >
+        <View style={styles.deleteAccountInner}>
+          <Trash2 size={16} color={colors.danger} />
+          <Text style={styles.deleteAccountText}>
+            {isDeletingAccount ? 'Deleting Account...' : 'Delete Account'}
+          </Text>
+        </View>
+        {isDeletingAccount ? (
+          <ActivityIndicator size="small" color={colors.danger} />
+        ) : (
+          <Text style={styles.deleteAccountHint}>Permanent</Text>
+        )}
       </TouchableOpacity>
 
       <OrderTrackingModal order={trackingOrder} onClose={() => setTrackingOrder(null)} />
@@ -308,6 +352,33 @@ const createStyles = (colors: ColorPalette) => StyleSheet.create({
     color: colors.text,
     fontSize: 15,
     fontWeight: '700',
+  },
+  deleteAccountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginTop: 10,
+  },
+  deleteAccountInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  deleteAccountText: {
+    color: colors.danger,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  deleteAccountHint: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
   },
   emptyBox: {
     backgroundColor: colors.card,

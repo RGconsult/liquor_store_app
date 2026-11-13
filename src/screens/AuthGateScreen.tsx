@@ -27,10 +27,10 @@ export const AuthGateScreen: React.FC = () => {
 
   // "Next" on the keyboard moves to the following field (scrolling it into
   // view) instead of leaving the user typing into a field they can't see.
-  const dobMonthRef = useRef<TextInput>(null);
-  const dobYearRef = useRef<TextInput>(null);
-  const emailRef = useRef<TextInput>(null);
-  const passwordRef = useRef<TextInput>(null);
+  const dobMonthRef = useRef<React.ElementRef<typeof TextInput>>(null);
+  const dobYearRef = useRef<React.ElementRef<typeof TextInput>>(null);
+  const emailRef = useRef<React.ElementRef<typeof TextInput>>(null);
+  const passwordRef = useRef<React.ElementRef<typeof TextInput>>(null);
 
   const validateDob = (): { iso: string } | { error: string } => {
     const day = parseInt(dobDay, 10);

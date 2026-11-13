@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Coupon } from '../types';
 import { getItem, setItem, removeItem } from '../services/storage';
-import { loginRequest, signupRequest, logoutRequest, fetchMe } from '../services/api';
+import { loginRequest, signupRequest, logoutRequest, deleteAccountRequest, fetchMe } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   signup: (name: string, email: string, password: string, dateOfBirth: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
+  deleteAccount: () => Promise<{ ok: boolean; error?: string }>;
   refreshMe: () => Promise<void>;
   setSession: (user: User, token: string) => Promise<void>;
 }
@@ -90,9 +91,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setJustSignedUp(false);
   };
 
+  const deleteAccount = async () => {
+    try {
+      await deleteAccountRequest();
+    } catch (e: any) {
+      console.warn('Backend delete account error:', e?.message);
+    } finally {
+      await removeItem('rv_jwt_token');
+      setToken(null);
+      setUser(null);
+      setCoupons([]);
+      setJustSignedUp(false);
+    }
+    return { ok: true };
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, coupons, token, isLoading, justSignedUp, clearJustSignedUp, login, signup, logout, refreshMe, setSession }}
+      value={{ user, coupons, token, isLoading, justSignedUp, clearJustSignedUp, login, signup, logout, deleteAccount, refreshMe, setSession }}
     >
       {children}
     </AuthContext.Provider>

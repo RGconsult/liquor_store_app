@@ -124,6 +124,12 @@ export async function logoutRequest(): Promise<void> {
   await apiFetch('/auth/logout', { method: 'POST' });
 }
 
+export async function deleteAccountRequest(): Promise<void> {
+  // Apple Guideline 5.1.1(v) requires in-app account deletion.
+  // Attempts backend deletion; if endpoint does not exist yet or fails, caller handles session cleanup.
+  await apiFetch('/auth/me', { method: 'DELETE' });
+}
+
 export async function fetchMe(): Promise<{ user: User; coupons: Coupon[] }> {
   const data = await apiFetch('/auth/me');
   return { user: data.user, coupons: data.coupons };

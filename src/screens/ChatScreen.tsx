@@ -21,7 +21,7 @@ export const ChatScreen: React.FC = () => {
   const { messages, isLoading, isSending, loadThread, send } = useChat();
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ElementRef<typeof ScrollView>>(null);
 
   useEffect(() => {
     loadThread();
