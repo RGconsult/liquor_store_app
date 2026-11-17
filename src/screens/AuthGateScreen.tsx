@@ -57,6 +57,11 @@ export const AuthGateScreen: React.FC = () => {
   const handleAuth = async () => {
     setAuthError('');
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setAuthError('Please enter a valid email address.');
+      return;
+    }
+
     if (isLoginMode) {
       setAuthSubmitting(true);
       const result = await login(email, password);

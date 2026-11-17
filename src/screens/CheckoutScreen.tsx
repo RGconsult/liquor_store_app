@@ -56,11 +56,18 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
   const discountedSubtotal = coupon ? subtotalUsd * (1 - coupon.percentOff / 100) : subtotalUsd;
   const totalUsd = discountedSubtotal + shippingUsd;
 
+  const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+  const isValidPhone = (v: string) => /^(07\d{8}|\+?250\d{9})$/.test(v.replace(/[\s\-]/g, ''));
+
   const handleSubmit = async () => {
     setError('');
 
     if (!fullName.trim() || !email.trim()) {
       setError('Please fill in your name and email.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address (e.g. name@domain.com).');
       return;
     }
     if (!isPickup && !address.trim()) {
@@ -71,8 +78,16 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
       setError('Please enter a contact number so our driver can reach you.');
       return;
     }
+    if (!isPickup && !isValidPhone(contactPhone)) {
+      setError('Enter a valid Rwanda number: 07XXXXXXXX or +250XXXXXXXXX.');
+      return;
+    }
     if (paymentMethod === 'momo' && !momoNumber.trim()) {
       setError('Please enter your Mobile Money number.');
+      return;
+    }
+    if (paymentMethod === 'momo' && !isValidPhone(momoNumber)) {
+      setError('Enter a valid MoMo number: 07XXXXXXXX or +250XXXXXXXXX.');
       return;
     }
 
@@ -324,13 +339,14 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
               <Text style={styles.label}>Contact Number</Text>
               <TextInput
                 value={contactPhone}
-                onChangeText={setContactPhone}
-                placeholder="e.g. 0788 123 456"
+                onChangeText={(t) => setContactPhone(t.replace(/[^0-9+]/g, '').slice(0, 13))}
+                placeholder="e.g. 0788123456 or +250788123456"
                 placeholderTextColor={colors.textMuted}
                 keyboardType="phone-pad"
+                maxLength={13}
                 style={styles.input}
               />
-              <Text style={styles.helperText}>So our driver can reach you when they arrive.</Text>
+              <Text style={styles.helperText}>Rwanda format: 07XXXXXXXX or +250XXXXXXXXX</Text>
             </View>
           </>
         )}
@@ -380,10 +396,11 @@ export const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ onNavigateHome, 
             <Text style={styles.label}>MoMo Number You'll Pay From</Text>
             <TextInput
               value={momoNumber}
-              onChangeText={setMomoNumber}
-              placeholder="e.g. 0788 123 456"
+              onChangeText={(t) => setMomoNumber(t.replace(/[^0-9+]/g, '').slice(0, 13))}
+              placeholder="e.g. 0788123456 or +250788123456"
               placeholderTextColor={colors.textMuted}
               keyboardType="phone-pad"
+              maxLength={13}
               style={styles.input}
             />
             <Text style={styles.payDetailHint}>
